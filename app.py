@@ -103,6 +103,27 @@ def get_board(board_id):
     return jsonify({"board": dict(board), "cards": cards, "connections": connections, "notes": notes})
 
 
+@app.route("/api/boards/<int:board_id>", methods=["PATCH"])
+def rename_board(board_id):
+    data = request.get_json()
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        "UPDATE boards SET name = %s WHERE id = %s RETURNING id, name",
+        (name, board_id),
+    )
+    board = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    if not board:
+        return jsonify({"error": "Board not found"}), 404
+    return jsonify(dict(board))
+
+
 @app.route("/api/boards/<int:board_id>", methods=["DELETE"])
 def delete_board(board_id):
     conn = get_db()

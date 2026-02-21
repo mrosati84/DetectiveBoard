@@ -158,11 +158,16 @@ function renderBoardsList(boardsData) {
         item.className = 'board-item' + (b.id === currentBoardId ? ' active' : '');
         item.innerHTML = `
             <span class="board-item-name">${escHtml(b.name)}</span>
+            <button class="board-rename-btn" title="Rename board">✎</button>
             <button class="board-delete-btn" title="Delete board">&times;</button>
         `;
         item.querySelector('.board-item-name').addEventListener('click', () => {
             document.getElementById('menu').classList.remove('open');
             loadBoard(b.id);
+        });
+        item.querySelector('.board-rename-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            startRenameBoard(item, b);
         });
         item.querySelector('.board-delete-btn').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -188,6 +193,51 @@ async function onCreateBoard(e) {
         await loadBoards();
         loadBoard(board.id);
     }
+}
+
+function startRenameBoard(item, b) {
+    const nameSpan = item.querySelector('.board-item-name');
+    const renameBtn = item.querySelector('.board-rename-btn');
+    const deleteBtn = item.querySelector('.board-delete-btn');
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'board-rename-input';
+    input.value = b.name;
+
+    nameSpan.replaceWith(input);
+    renameBtn.style.display = 'none';
+    deleteBtn.style.display = 'none';
+    input.focus();
+    input.select();
+
+    let done = false;
+
+    const commit = async () => {
+        if (done) return;
+        done = true;
+        const newName = input.value.trim();
+        if (newName && newName !== b.name) {
+            await fetch(`/api/boards/${b.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName }),
+            });
+        }
+        loadBoards();
+    };
+
+    const cancel = () => {
+        if (done) return;
+        done = true;
+        loadBoards();
+    };
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    });
+    input.addEventListener('blur', commit);
 }
 
 async function deleteBoard(boardId, boardName) {

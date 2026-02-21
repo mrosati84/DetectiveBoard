@@ -444,6 +444,24 @@ body {
     color: #f5e6c8;
 }
 
+.board-rename-btn {
+    background: none;
+    border: none;
+    color: #c8a86e;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    opacity: 0.55;
+    transition: opacity 0.12s;
+    flex-shrink: 0;
+}
+
+.board-rename-btn:hover {
+    opacity: 1;
+    background: rgba(200, 170, 80, 0.2);
+}
+
 .board-delete-btn {
     background: none;
     border: none;
@@ -460,6 +478,25 @@ body {
 .board-delete-btn:hover {
     opacity: 1;
     background: rgba(200, 50, 50, 0.2);
+}
+
+.board-rename-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 220, 150, 0.35);
+    border-radius: 3px;
+    color: #f5e6c8;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 1px 5px;
+    outline: none;
+    min-width: 0;
+    transition: border-color 0.12s, background 0.12s;
+}
+
+.board-rename-input:focus {
+    border-color: rgba(255, 220, 150, 0.75);
+    background: rgba(255, 255, 255, 0.13);
 }
 
 /* ---- Toolbar ---- */
