@@ -1,5 +1,6 @@
 import os
 from logging.config import fileConfig
+from urllib.parse import quote_plus
 from alembic import context
 from dotenv import load_dotenv
 
@@ -11,13 +12,13 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 db_url = (
-    f"postgresql://{os.getenv('DATABASE_USER', 'postgres')}:"
-    f"{os.getenv('DATABASE_PASSWORD', 'postgres')}@"
+    f"postgresql://{quote_plus(os.getenv('DATABASE_USER', 'postgres'))}:"
+    f"{quote_plus(os.getenv('DATABASE_PASSWORD', 'postgres'))}@"
     f"{os.getenv('DATABASE_HOST', 'localhost')}:"
     f"{os.getenv('DATABASE_PORT', '5432')}/"
     f"{os.getenv('DATABASE_NAME', 'postgres')}"
 )
-config.set_main_option("sqlalchemy.url", db_url)
+config.set_main_option("sqlalchemy.url", db_url.replace("%", "%%"))
 
 target_metadata = None
 
