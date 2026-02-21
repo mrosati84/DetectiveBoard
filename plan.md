@@ -58,6 +58,13 @@ la card prevede lo stato `selected` qualora la si clicchi. È possibile selezion
 
 La card può essere eliminata, se `selected`, premendo il tasto `DEL`. Se più card sono `selected`, verranno eliminate tutte. Usa un semplice `confirm` del browser per confermare l'azione. Se una card `selected` viene ri-selezionata, non sarà più selected.
 
+#### Modificare una card
+
+È possibile modificare una card esistente facendo doppio click. Al doppio click appare un pannello flottante sulla destra che permette di modificarne tutti i field. Al click su "Salva":
+
+1. Il pannello si chiude.
+2. La card nella board di sughero mostra i dati aggiornati.
+
 #### Collegamento delle card
 
 Le card possono essere collegate tra loro tramite il classico *filo rosso* di lana delle board degli investigatori. Per collegare due card:

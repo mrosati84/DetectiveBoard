@@ -3,6 +3,7 @@ let currentBoardId = null;
 let cards = [];        // [{id, title, description, image_path, pos_x, pos_y, el}]
 let connections = [];  // [{id, card_id_1, card_id_2}]
 let selectedCardIds = new Set();
+let editingCardId = null;
 
 // ---- Init ----
 
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('new-board-form').addEventListener('submit', onCreateBoard);
     document.getElementById('card-form').addEventListener('submit', onCreateCard);
+    document.getElementById('edit-card-form').addEventListener('submit', onSaveEditCard);
     document.getElementById('modal-overlay').addEventListener('click', (e) => {
         if (e.target === document.getElementById('modal-overlay')) closeModal();
     });
@@ -27,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (e.key === 'Escape') {
             closeModal();
+            closeEditPanel();
         }
     });
 });
@@ -154,6 +157,11 @@ function createCardElement(card) {
             ${card.image_path ? `<img src="${card.image_path}" class="card-image" alt="">` : ''}
         </div>
     `;
+
+    el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        openEditPanel(card);
+    });
 
     makeDraggable(el, card);
     return el;
@@ -423,6 +431,67 @@ function openModal() {
 function closeModal() {
     document.getElementById('modal-overlay').classList.remove('open');
     document.getElementById('card-form').reset();
+}
+
+// ---- Edit Panel ----
+
+function openEditPanel(card) {
+    editingCardId = card.id;
+    document.getElementById('edit-card-title').value = card.title || '';
+    document.getElementById('edit-card-description').value = card.description || '';
+    document.getElementById('edit-card-image').value = '';
+
+    const imgWrap = document.getElementById('edit-current-image-wrap');
+    const img = document.getElementById('edit-current-image');
+    if (card.image_path) {
+        img.src = card.image_path;
+        imgWrap.style.display = '';
+    } else {
+        imgWrap.style.display = 'none';
+        img.src = '';
+    }
+
+    document.getElementById('edit-panel').classList.add('open');
+    setTimeout(() => document.getElementById('edit-card-title').focus(), 50);
+}
+
+function closeEditPanel() {
+    document.getElementById('edit-panel').classList.remove('open');
+    editingCardId = null;
+    document.getElementById('edit-card-form').reset();
+    document.getElementById('edit-current-image-wrap').style.display = 'none';
+}
+
+async function onSaveEditCard(e) {
+    e.preventDefault();
+    if (!editingCardId) return;
+
+    const fd = new FormData(e.target);
+    const res = await fetch(`/api/cards/${editingCardId}`, {
+        method: 'PUT',
+        body: fd,
+    });
+
+    if (res.ok) {
+        const updated = await res.json();
+        const card = cards.find(c => c.id === editingCardId);
+        if (card) {
+            card.title = updated.title;
+            card.description = updated.description;
+            card.image_path = updated.image_path;
+            updateCardElement(card);
+        }
+        closeEditPanel();
+    }
+}
+
+function updateCardElement(card) {
+    const content = card.el.querySelector('.card-content');
+    content.innerHTML = `
+        <div class="card-title">${escHtml(card.title)}</div>
+        ${card.description ? `<div class="card-description">${escHtml(card.description)}</div>` : ''}
+        ${card.image_path ? `<img src="${card.image_path}" class="card-image" alt="">` : ''}
+    `;
 }
 
 // ---- Utilities ----

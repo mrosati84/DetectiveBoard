@@ -31,6 +31,35 @@
     <button id="disconnect-btn" class="toolbar-btn" onclick="disconnectCards()">&#9986; Disconnect</button>
 </div>
 
+<!-- Card edit panel (right side) -->
+<div id="edit-panel">
+    <div id="edit-panel-header">
+        <h2>Modifica Card</h2>
+        <button id="edit-panel-close" onclick="closeEditPanel()" title="Chiudi">&times;</button>
+    </div>
+    <form id="edit-card-form" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="edit-card-title">Titolo <span class="required">*</span></label>
+            <input type="text" id="edit-card-title" name="title" required maxlength="200" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="edit-card-description">Descrizione</label>
+            <textarea id="edit-card-description" name="description" placeholder="Note opzionali..."></textarea>
+        </div>
+        <div class="form-group">
+            <label for="edit-card-image">Immagine <span class="hint">(jpg/png, max 1MB)</span></label>
+            <div id="edit-current-image-wrap" style="display:none;margin-bottom:8px;">
+                <img id="edit-current-image" src="" alt="" style="max-width:100%;max-height:120px;border-radius:3px;">
+            </div>
+            <input type="file" id="edit-card-image" name="image" accept=".jpg,.jpeg,.png">
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="closeEditPanel()">Annulla</button>
+            <button type="submit" class="btn-primary">Salva</button>
+        </div>
+    </form>
+</div>
+
 <!-- Card creation modal -->
 <div id="modal-overlay">
     <div id="modal">

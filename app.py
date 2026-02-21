@@ -151,16 +151,38 @@ def create_card(board_id):
 
 @app.route("/api/cards/<int:card_id>", methods=["PUT"])
 def update_card(card_id):
-    data = request.get_json()
-    fields = []
-    values = []
-    for field in ("pos_x", "pos_y", "title", "description"):
-        if field in data:
-            fields.append(f"{field} = %s")
-            values.append(data[field])
-    if not fields:
-        return jsonify({"error": "Nothing to update"}), 400
-    values.append(card_id)
+    content_type = request.content_type or ""
+    if "multipart/form-data" in content_type:
+        # Edit panel form submission (supports image upload)
+        title = (request.form.get("title") or "").strip()
+        description = (request.form.get("description") or "").strip() or None
+        if not title:
+            return jsonify({"error": "Title is required"}), 400
+        fields = ["title = %s", "description = %s"]
+        values = [title, description]
+        if "image" in request.files:
+            file = request.files["image"]
+            if file and file.filename:
+                ext = file.filename.rsplit(".", 1)[-1].lower()
+                if ext not in ("jpg", "jpeg", "png"):
+                    return jsonify({"error": "Only jpg/png images are allowed"}), 400
+                filename = f"{uuid.uuid4().hex}.{ext}"
+                file.save(os.path.join(UPLOAD_FOLDER, filename))
+                fields.append("image_path = %s")
+                values.append(f"/static/uploads/{filename}")
+        values.append(card_id)
+    else:
+        # JSON (position save, etc.)
+        data = request.get_json()
+        fields = []
+        values = []
+        for field in ("pos_x", "pos_y", "title", "description"):
+            if field in data:
+                fields.append(f"{field} = %s")
+                values.append(data[field])
+        if not fields:
+            return jsonify({"error": "Nothing to update"}), 400
+        values.append(card_id)
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(

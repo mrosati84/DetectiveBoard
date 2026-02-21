@@ -343,6 +343,56 @@ body {
     background: #606060;
 }
 
+/* ---- Edit Panel ---- */
+
+#edit-panel {
+    position: fixed;
+    top: 20px;
+    right: -420px;
+    width: 340px;
+    max-width: calc(100vw - 40px);
+    background: #fffef5;
+    border-radius: 8px;
+    padding: 20px 22px 22px;
+    box-shadow: -3px 4px 24px rgba(0, 0, 0, 0.4);
+    z-index: 250;
+    transition: right 0.28s ease;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+#edit-panel.open {
+    right: 20px;
+}
+
+#edit-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+#edit-panel-header h2 {
+    font-size: 17px;
+    color: #2a1500;
+}
+
+#edit-panel-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #888;
+    line-height: 1;
+    padding: 0 4px;
+    border-radius: 3px;
+    transition: color 0.12s;
+}
+
+#edit-panel-close:hover {
+    color: #333;
+}
+
 /* ---- Modal ---- */
 
 #modal-overlay {
