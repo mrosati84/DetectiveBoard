@@ -34,6 +34,7 @@ Il menu e' flottante sulla sinistra. Dal menu e' possibile:
 
 - **Caricare** board esistenti
 - **Creare** una nuova board
+- **Rinominare** board esistenti (inline edit tramite pulsante `✎` nella lista)
 - **Eliminare** board esistenti
 
 Il menu puo' essere mostrato/nascosto (toggle).
@@ -48,7 +49,7 @@ La card e' l'elemento principale della board. I campi sono:
 
 - `title`: obblibatorio, testo.
 - `description`: opzionale, testo lungo.
-- `image`: opzionale, file upload immagine (jp[e]g, png), max 1MB.
+- `image`: opzionale, file upload immagine (jp[e]g, png). Il limite di 1MB è indicato nell'UI come hint ma non è validato server-side.
 
 Il file di image deve essere salvato nel filesystem locale sotto la directory `static/uploads`.
 
