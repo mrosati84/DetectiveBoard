@@ -1,0 +1,434 @@
+// ---- State ----
+let currentBoardId = null;
+let cards = [];        // [{id, title, description, image_path, pos_x, pos_y, el}]
+let connections = [];  // [{id, card_id_1, card_id_2}]
+let selectedCardIds = new Set();
+
+// ---- Init ----
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadBoards();
+
+    document.getElementById('new-board-form').addEventListener('submit', onCreateBoard);
+    document.getElementById('card-form').addEventListener('submit', onCreateCard);
+    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modal-overlay')) closeModal();
+    });
+    document.getElementById('board').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('board') ||
+            e.target === document.getElementById('connections-svg')) {
+            deselectAll();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.key === 'Delete' || e.key === 'Del') && selectedCardIds.size > 0) {
+            deleteSelectedCards();
+        }
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+});
+
+// ---- Menu ----
+
+function toggleMenu() {
+    document.getElementById('menu').classList.toggle('open');
+}
+
+async function loadBoards() {
+    const res = await fetch('/api/boards');
+    const data = await res.json();
+    renderBoardsList(data);
+}
+
+function renderBoardsList(boardsData) {
+    const list = document.getElementById('boards-list');
+    list.innerHTML = '';
+    if (boardsData.length === 0) {
+        list.innerHTML = '<p style="font-size:12px;opacity:0.5;padding:6px 0">No boards yet.</p>';
+        return;
+    }
+    boardsData.forEach(b => {
+        const item = document.createElement('div');
+        item.className = 'board-item' + (b.id === currentBoardId ? ' active' : '');
+        item.innerHTML = `
+            <span class="board-item-name">${escHtml(b.name)}</span>
+            <button class="board-delete-btn" title="Delete board">&times;</button>
+        `;
+        item.querySelector('.board-item-name').addEventListener('click', () => {
+            document.getElementById('menu').classList.remove('open');
+            loadBoard(b.id);
+        });
+        item.querySelector('.board-delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteBoard(b.id, b.name);
+        });
+        list.appendChild(item);
+    });
+}
+
+async function onCreateBoard(e) {
+    e.preventDefault();
+    const input = document.getElementById('new-board-name');
+    const name = input.value.trim();
+    if (!name) return;
+    const res = await fetch('/api/boards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+    });
+    if (res.ok) {
+        const board = await res.json();
+        input.value = '';
+        await loadBoards();
+        loadBoard(board.id);
+    }
+}
+
+async function deleteBoard(boardId, boardName) {
+    if (!confirm(`Delete board "${boardName}"?\nAll cards and connections will be lost.`)) return;
+    const res = await fetch(`/api/boards/${boardId}`, { method: 'DELETE' });
+    if (res.ok) {
+        if (currentBoardId === boardId) {
+            currentBoardId = null;
+            clearBoard();
+            document.getElementById('no-board-msg').style.display = '';
+        }
+        loadBoards();
+    }
+}
+
+// ---- Board loading ----
+
+async function loadBoard(boardId) {
+    const res = await fetch(`/api/boards/${boardId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    currentBoardId = boardId;
+    clearBoard();
+
+    connections = data.connections;
+    data.cards.forEach(card => addCard(card));
+    renderConnections();
+
+    document.getElementById('no-board-msg').style.display = 'none';
+
+    // Refresh list to show active state
+    loadBoards();
+}
+
+function clearBoard() {
+    document.querySelectorAll('.card').forEach(el => el.remove());
+    document.getElementById('connections-svg').innerHTML = '';
+    selectedCardIds.clear();
+    cards = [];
+    connections = [];
+    updateToolbar();
+}
+
+// ---- Card creation ----
+
+function addCard(cardData) {
+    const card = { ...cardData };
+    card.el = createCardElement(card);
+    document.getElementById('board').appendChild(card.el);
+    cards.push(card);
+    return card;
+}
+
+function createCardElement(card) {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.style.left = card.pos_x + 'px';
+    el.style.top = card.pos_y + 'px';
+    el.dataset.id = card.id;
+
+    el.innerHTML = `
+        <div class="card-pin"></div>
+        <div class="card-content">
+            <div class="card-title">${escHtml(card.title)}</div>
+            ${card.description ? `<div class="card-description">${escHtml(card.description)}</div>` : ''}
+            ${card.image_path ? `<img src="${card.image_path}" class="card-image" alt="">` : ''}
+        </div>
+    `;
+
+    makeDraggable(el, card);
+    return el;
+}
+
+async function onCreateCard(e) {
+    e.preventDefault();
+    if (!currentBoardId) return;
+
+    const form = e.target;
+    const fd = new FormData(form);
+
+    // Random placement in a comfortable area of the board
+    const x = 150 + Math.random() * (window.innerWidth - 450);
+    const y = 100 + Math.random() * (window.innerHeight - 300);
+    fd.append('pos_x', x.toFixed(0));
+    fd.append('pos_y', y.toFixed(0));
+
+    const res = await fetch(`/api/boards/${currentBoardId}/cards`, {
+        method: 'POST',
+        body: fd,
+    });
+    if (res.ok) {
+        const cardData = await res.json();
+        closeModal();
+        form.reset();
+        addCard(cardData);
+    }
+}
+
+// ---- Drag & drop ----
+
+function makeDraggable(el, card) {
+    el.addEventListener('mousedown', (downEvent) => {
+        if (downEvent.button !== 0) return;
+        downEvent.preventDefault();
+        downEvent.stopPropagation();
+
+        const startX = downEvent.clientX;
+        const startY = downEvent.clientY;
+        const startPosX = card.pos_x;
+        const startPosY = card.pos_y;
+        let isDragging = false;
+
+        function onMouseMove(e) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            if (!isDragging && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+                isDragging = true;
+            }
+            if (isDragging) {
+                card.pos_x = startPosX + dx;
+                card.pos_y = startPosY + dy;
+                el.style.left = card.pos_x + 'px';
+                el.style.top = card.pos_y + 'px';
+                renderConnections();
+            }
+        }
+
+        function onMouseUp(upEvent) {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+
+            if (!isDragging) {
+                toggleSelection(card.id, upEvent.shiftKey);
+            } else {
+                saveCardPosition(card);
+            }
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+}
+
+// ---- Selection ----
+
+function toggleSelection(cardId, additive) {
+    const card = cards.find(c => c.id === cardId);
+    if (!card) return;
+
+    if (!additive) {
+        selectedCardIds.forEach(id => {
+            const c = cards.find(x => x.id === id);
+            if (c) c.el.classList.remove('selected');
+        });
+        const wasSelected = selectedCardIds.has(cardId);
+        selectedCardIds.clear();
+        if (!wasSelected) {
+            selectedCardIds.add(cardId);
+            card.el.classList.add('selected');
+        }
+    } else {
+        if (selectedCardIds.has(cardId)) {
+            selectedCardIds.delete(cardId);
+            card.el.classList.remove('selected');
+        } else {
+            selectedCardIds.add(cardId);
+            card.el.classList.add('selected');
+        }
+    }
+
+    updateToolbar();
+}
+
+function deselectAll() {
+    selectedCardIds.forEach(id => {
+        const c = cards.find(x => x.id === id);
+        if (c) c.el.classList.remove('selected');
+    });
+    selectedCardIds.clear();
+    updateToolbar();
+}
+
+// ---- Toolbar ----
+
+function updateToolbar() {
+    const connectBtn = document.getElementById('connect-btn');
+    const disconnectBtn = document.getElementById('disconnect-btn');
+
+    if (selectedCardIds.size === 2) {
+        const [id1, id2] = [...selectedCardIds];
+        if (areConnected(id1, id2)) {
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = 'inline-block';
+        } else {
+            connectBtn.style.display = 'inline-block';
+            disconnectBtn.style.display = 'none';
+        }
+    } else {
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'none';
+    }
+}
+
+// ---- Connections ----
+
+function areConnected(id1, id2) {
+    return connections.some(c =>
+        (c.card_id_1 === id1 && c.card_id_2 === id2) ||
+        (c.card_id_1 === id2 && c.card_id_2 === id1)
+    );
+}
+
+async function connectCards() {
+    const [id1, id2] = [...selectedCardIds];
+    const res = await fetch('/api/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card_id_1: id1, card_id_2: id2 }),
+    });
+    if (res.ok) {
+        const conn = await res.json();
+        connections.push(conn);
+        renderConnections();
+        updateToolbar();
+    }
+}
+
+async function disconnectCards() {
+    const [id1, id2] = [...selectedCardIds];
+    const res = await fetch('/api/connections', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card_id_1: id1, card_id_2: id2 }),
+    });
+    if (res.ok) {
+        connections = connections.filter(c =>
+            !((c.card_id_1 === id1 && c.card_id_2 === id2) ||
+              (c.card_id_1 === id2 && c.card_id_2 === id1))
+        );
+        renderConnections();
+        updateToolbar();
+    }
+}
+
+// ---- SVG yarn rendering ----
+
+function renderConnections() {
+    const svg = document.getElementById('connections-svg');
+    svg.innerHTML = '';
+
+    const CARD_WIDTH = 210;
+    const PIN_Y_OFFSET = 4; // near the pin at top of card
+
+    connections.forEach(conn => {
+        const card1 = cards.find(c => c.id === conn.card_id_1);
+        const card2 = cards.find(c => c.id === conn.card_id_2);
+        if (!card1 || !card2) return;
+
+        const x1 = card1.pos_x + CARD_WIDTH / 2;
+        const y1 = card1.pos_y + PIN_Y_OFFSET;
+        const x2 = card2.pos_x + CARD_WIDTH / 2;
+        const y2 = card2.pos_y + PIN_Y_OFFSET;
+
+        const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        const sag = Math.max(40, dist * 0.22);
+
+        // Cubic Bézier — control points pulled downward to simulate gravity
+        const cp1x = x1 + (x2 - x1) * 0.25;
+        const cp1y = y1 + sag;
+        const cp2x = x1 + (x2 - x1) * 0.75;
+        const cp2y = y2 + sag;
+
+        // Subtle texture: slightly thicker white shadow path beneath
+        const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        shadow.setAttribute('d', `M ${x1} ${y1} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${x2} ${y2}`);
+        shadow.setAttribute('stroke', 'rgba(0,0,0,0.25)');
+        shadow.setAttribute('stroke-width', '4');
+        shadow.setAttribute('fill', 'none');
+        shadow.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(shadow);
+
+        // Main red yarn path
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${x1} ${y1} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${x2} ${y2}`);
+        path.setAttribute('stroke', '#cc1a00');
+        path.setAttribute('stroke-width', '2.5');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('opacity', '0.88');
+        svg.appendChild(path);
+    });
+}
+
+// ---- Delete selected cards ----
+
+async function deleteSelectedCards() {
+    const count = selectedCardIds.size;
+    const msg = count === 1 ? 'Delete this card?' : `Delete these ${count} cards?`;
+    if (!confirm(msg)) return;
+
+    const idsToDelete = [...selectedCardIds];
+    for (const id of idsToDelete) {
+        const res = await fetch(`/api/cards/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            const card = cards.find(c => c.id === id);
+            if (card) card.el.remove();
+            cards = cards.filter(c => c.id !== id);
+            connections = connections.filter(c => c.card_id_1 !== id && c.card_id_2 !== id);
+            selectedCardIds.delete(id);
+        }
+    }
+
+    renderConnections();
+    updateToolbar();
+}
+
+// ---- Save card position ----
+
+async function saveCardPosition(card) {
+    await fetch(`/api/cards/${card.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pos_x: card.pos_x, pos_y: card.pos_y }),
+    });
+}
+
+// ---- Modal ----
+
+function openModal() {
+    if (!currentBoardId) return;
+    document.getElementById('modal-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('card-title').focus(), 50);
+}
+
+function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.getElementById('card-form').reset();
+}
+
+// ---- Utilities ----
+
+function escHtml(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str || ''));
+    return div.innerHTML;
+}
