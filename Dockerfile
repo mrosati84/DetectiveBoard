@@ -45,11 +45,13 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Cartella upload (sovrascrivibile via env)
-ENV UPLOAD_FOLDER=/app/uploads
-
-# Crea cartella uploads e rende eseguibile l'entrypoint
-RUN mkdir -p /app/uploads \
+# Crea il mount point del volume, il symlink per il serving statico e rende
+# eseguibile l'entrypoint.
+# Il symlink /app/static/uploads -> /mnt/uploads permette a Flask di servire
+# le immagini da /static/uploads/ leggendo direttamente dal volume Railway.
+RUN mkdir -p /mnt/uploads \
+    && rm -rf /app/static/uploads \
+    && ln -s /mnt/uploads /app/static/uploads \
     && chmod +x /app/entrypoint.sh
 
 EXPOSE 8080
