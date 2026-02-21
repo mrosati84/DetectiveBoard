@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('note-modal-overlay').addEventListener('click', (e) => {
         if (e.target === document.getElementById('note-modal-overlay')) closeNoteModal();
     });
+    document.getElementById('board').addEventListener('click', () => {
+        closeMenu();
+    });
     document.getElementById('board').addEventListener('click', (e) => {
         const board = document.getElementById('board');
         const canvas = document.getElementById('canvas');
@@ -104,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         if (e.key === 'Escape') {
+            closeMenu();
             closeModal();
             closeNoteModal();
             closeEditPanel();
@@ -130,6 +134,10 @@ function resetPan() {
 
 function toggleMenu() {
     document.getElementById('menu').classList.toggle('open');
+}
+
+function closeMenu() {
+    document.getElementById('menu').classList.remove('open');
 }
 
 async function loadBoards() {
