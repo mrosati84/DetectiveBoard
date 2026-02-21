@@ -149,8 +149,9 @@ function createCardElement(card) {
     el.style.top = card.pos_y + 'px';
     el.dataset.id = card.id;
 
+    const pinPos = card.pin_position || 'center';
     el.innerHTML = `
-        <div class="card-pin"></div>
+        <div class="card-pin pin-${pinPos}"></div>
         <div class="card-content">
             <div class="card-title">${escHtml(card.title)}</div>
             ${card.description ? `<div class="card-description">${escHtml(card.description)}</div>` : ''}
@@ -347,14 +348,21 @@ function renderConnections() {
     const CARD_WIDTH = 210;
     const PIN_Y_OFFSET = 4; // near the pin at top of card
 
+    function pinCenterX(card) {
+        const pos = card.pin_position || 'center';
+        if (pos === 'left') return card.pos_x + 32;   // 22px left + 10px half-pin
+        if (pos === 'right') return card.pos_x + CARD_WIDTH - 32; // right: 22px, center
+        return card.pos_x + CARD_WIDTH / 2;
+    }
+
     connections.forEach(conn => {
         const card1 = cards.find(c => c.id === conn.card_id_1);
         const card2 = cards.find(c => c.id === conn.card_id_2);
         if (!card1 || !card2) return;
 
-        const x1 = card1.pos_x + CARD_WIDTH / 2;
+        const x1 = pinCenterX(card1);
         const y1 = card1.pos_y + PIN_Y_OFFSET;
-        const x2 = card2.pos_x + CARD_WIDTH / 2;
+        const x2 = pinCenterX(card2);
         const y2 = card2.pos_y + PIN_Y_OFFSET;
 
         const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
@@ -451,6 +459,11 @@ function openEditPanel(card) {
         img.src = '';
     }
 
+    const pinPos = card.pin_position || 'center';
+    document.querySelectorAll('input[name="pin_position"]').forEach(r => {
+        r.checked = r.value === pinPos;
+    });
+
     document.getElementById('edit-panel').classList.add('open');
     setTimeout(() => document.getElementById('edit-card-title').focus(), 50);
 }
@@ -479,13 +492,18 @@ async function onSaveEditCard(e) {
             card.title = updated.title;
             card.description = updated.description;
             card.image_path = updated.image_path;
+            card.pin_position = updated.pin_position;
             updateCardElement(card);
+            renderConnections();
         }
         closeEditPanel();
     }
 }
 
 function updateCardElement(card) {
+    const pinEl = card.el.querySelector('.card-pin');
+    pinEl.className = `card-pin pin-${card.pin_position || 'center'}`;
+
     const content = card.el.querySelector('.card-content');
     content.innerHTML = `
         <div class="card-title">${escHtml(card.title)}</div>

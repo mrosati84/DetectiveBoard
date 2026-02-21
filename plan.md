@@ -54,6 +54,16 @@ Il file di image deve essere salvato nel filesystem locale sotto la directory `s
 
 Il layout della card prevede la presenza di un pin da board di sughero visibile sulla parte superiore. Questo non ha alcuna funzionalita' e' solo estetico.
 
+#### Posizione del pin delle card
+
+Il pin delle card puo' apparire in 3 posizioni sulla parte superiore della card:
+
+1. In centro (default)
+2. A sinistra
+3. A destra
+
+La posizione del pin puo' essere modificata tramite un apposito radio button quando la card viene modificata. È necessario, se già esistente, creare una migrazione per la card per gestire e mantenere salvata la posizione del pin della card.
+
 la card prevede lo stato `selected` qualora la si clicchi. È possibile selezionare più card contemporaneamente tenendo premuto il tasto `SHIFT`.
 
 La card può essere eliminata, se `selected`, premendo il tasto `DEL`. Se più card sono `selected`, verranno eliminate tutte. Usa un semplice `confirm` del browser per confermare l'azione. Se una card `selected` viene ri-selezionata, non sarà più selected.
@@ -63,7 +73,7 @@ La card può essere eliminata, se `selected`, premendo il tasto `DEL`. Se più c
 È possibile modificare una card esistente facendo doppio click. Al doppio click appare un pannello flottante sulla destra che permette di modificarne tutti i field. Al click su "Salva":
 
 1. Il pannello si chiude.
-2. La card nella board di sughero mostra i dati aggiornati.
+2. La card nella board di sughero mostra i dati aggiornati (Incluso il ricalcolo della posizione del filo rosso, in base alla posizione del pin, se questo è stato modificato)
 
 #### Collegamento delle card
 
@@ -85,3 +95,5 @@ Se una card viene tenuta "premuta" con il mouse sinistro e spostata, questa si s
 ##### Il filo rosso dell'investigatore
 
 Il filo rosso non deve essere una banale linea rossa. Deve sembrare un filo di lana, e "sentire la gravità". Dovra' incurvarsi leggermente verso il basso simulando la leggera gravità che il filo sente.
+
+Il filo rosso deve apparire **sopra** le card.

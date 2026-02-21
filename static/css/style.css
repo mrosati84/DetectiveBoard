@@ -31,7 +31,7 @@ body {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 1;
+    z-index: 50;
 }
 
 #no-board-msg {
@@ -95,6 +95,36 @@ body {
     height: 7px;
     background: linear-gradient(to bottom, #999, #ccc);
     border-radius: 0 0 3px 3px;
+}
+
+.card-pin.pin-left {
+    left: 22px;
+    transform: none;
+}
+
+.card-pin.pin-right {
+    left: auto;
+    right: 22px;
+    transform: none;
+}
+
+.pin-position-group {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-top: 2px;
+}
+
+.pin-position-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #3a2000;
+    cursor: pointer;
 }
 
 .card-content {
