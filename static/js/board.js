@@ -31,7 +31,7 @@ function onLoggedIn() {
     document.getElementById('auth-logged-out').style.display = 'none';
     document.getElementById('auth-logged-in').style.display = 'flex';
     document.getElementById('menu-toggle').style.display = '';
-    document.getElementById('no-board-text').textContent = 'Apri il menu per caricare o creare una board';
+    document.getElementById('no-board-text').textContent = 'Open the menu to load or create a board';
     loadBoards();
 }
 
@@ -45,7 +45,7 @@ function onLoggedOut() {
     clearBoard();
     document.getElementById('no-board-msg').style.display = '';
     document.getElementById('toolbar').style.display = 'none';
-    document.getElementById('no-board-text').textContent = 'Accedi per usare DetectiveBoard';
+    document.getElementById('no-board-text').textContent = 'Log in to use DetectiveBoard';
 }
 
 async function handleLogin(e) {
@@ -66,7 +66,7 @@ async function handleLogin(e) {
         closeLoginModal();
         onLoggedIn();
     } else {
-        errorEl.textContent = data.error || 'Accesso fallito';
+        errorEl.textContent = data.error || 'Login failed';
     }
 }
 
@@ -88,7 +88,7 @@ async function handleRegister(e) {
         closeRegisterModal();
         onLoggedIn();
     } else {
-        errorEl.textContent = data.error || 'Registrazione fallita';
+        errorEl.textContent = data.error || 'Registration failed';
     }
 }
 
@@ -290,7 +290,7 @@ function renderBoardsList(boardsData) {
     const list = document.getElementById('boards-list');
     list.innerHTML = '';
     if (boardsData.length === 0) {
-        list.innerHTML = '<p style="font-size:12px;opacity:0.5;padding:6px 0">Nessuna board ancora.</p>';
+        list.innerHTML = '<p style="font-size:12px;opacity:0.5;padding:6px 0">No boards yet.</p>';
         return;
     }
     boardsData.forEach(b => {
@@ -298,8 +298,8 @@ function renderBoardsList(boardsData) {
         item.className = 'board-item' + (b.id === currentBoardId ? ' active' : '');
         item.innerHTML = `
             <span class="board-item-name">${escHtml(b.name)}</span>
-            <button class="board-rename-btn" title="Rinomina board">✎</button>
-            <button class="board-delete-btn" title="Elimina board">&times;</button>
+            <button class="board-rename-btn" title="Rename board">✎</button>
+            <button class="board-delete-btn" title="Delete board">&times;</button>
         `;
         item.querySelector('.board-item-name').addEventListener('click', () => {
             document.getElementById('menu').classList.remove('open');
@@ -383,7 +383,7 @@ function startRenameBoard(item, b) {
 }
 
 async function deleteBoard(boardId, boardName) {
-    if (!confirm(`Eliminare la board "${boardName}"?\nTutte le card e le connessioni andranno perse.`)) return;
+    if (!confirm(`Delete board "${boardName}"?\nAll cards and connections will be lost.`)) return;
     const res = await fetch(`/api/boards/${boardId}`, {
         method: 'DELETE',
         headers: authHeaders(),
@@ -758,9 +758,9 @@ async function deleteSelected() {
     const total = cardCount + noteCount;
     let msg;
     if (total === 1) {
-        msg = cardCount === 1 ? 'Eliminare questa card?' : 'Eliminare questa nota?';
+        msg = cardCount === 1 ? 'Delete this card?' : 'Delete this note?';
     } else {
-        msg = `Eliminare questi ${total} elementi?`;
+        msg = `Delete these ${total} items?`;
     }
     if (!confirm(msg)) return;
 

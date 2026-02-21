@@ -97,9 +97,9 @@ def register():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     if not email or not password:
-        return jsonify({"error": "Email e password sono obbligatorie"}), 400
+        return jsonify({"error": "Email and password are required"}), 400
     if len(password) < 8:
-        return jsonify({"error": "La password deve essere di almeno 8 caratteri"}), 400
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
 
     password_hash = generate_password_hash(password)
     conn = get_db()
@@ -115,7 +115,7 @@ def register():
         conn.rollback()
         cur.close()
         conn.close()
-        return jsonify({"error": "Email già registrata"}), 409
+        return jsonify({"error": "Email already registered"}), 409
     cur.close()
     conn.close()
 
@@ -129,7 +129,7 @@ def login():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     if not email or not password:
-        return jsonify({"error": "Email e password sono obbligatorie"}), 400
+        return jsonify({"error": "Email and password are required"}), 400
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -139,7 +139,7 @@ def login():
     conn.close()
 
     if not user or not check_password_hash(user["password_hash"], password):
-        return jsonify({"error": "Email o password non validi"}), 401
+        return jsonify({"error": "Invalid email or password"}), 401
 
     token = create_token(user["id"])
     return jsonify({"token": token, "email": user["email"]})
@@ -155,7 +155,7 @@ def get_me():
     cur.close()
     conn.close()
     if not user:
-        return jsonify({"error": "Utente non trovato"}), 404
+        return jsonify({"error": "User not found"}), 404
     return jsonify(dict(user))
 
 
@@ -182,7 +182,7 @@ def create_board():
     data = request.get_json()
     name = (data.get("name") or "").strip()
     if not name:
-        return jsonify({"error": "Il nome è obbligatorio"}), 400
+        return jsonify({"error": "Name is required"}), 400
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(
@@ -206,7 +206,7 @@ def get_board(board_id):
     if not board:
         cur.close()
         conn.close()
-        return jsonify({"error": "Board non trovata"}), 404
+        return jsonify({"error": "Board not found"}), 404
     cur.execute(
         "SELECT id, title, description, image_path, pos_x, pos_y, pin_position FROM cards WHERE board_id = %s",
         (board_id,),
@@ -239,7 +239,7 @@ def rename_board(board_id):
     data = request.get_json()
     name = (data.get("name") or "").strip()
     if not name:
-        return jsonify({"error": "Il nome è obbligatorio"}), 400
+        return jsonify({"error": "Name is required"}), 400
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(
@@ -251,7 +251,7 @@ def rename_board(board_id):
     cur.close()
     conn.close()
     if not board:
-        return jsonify({"error": "Board non trovata"}), 404
+        return jsonify({"error": "Board not found"}), 404
     return jsonify(dict(board))
 
 
@@ -277,7 +277,7 @@ def create_card(board_id):
     if not board_belongs_to_user(board_id, request.user_id, cur):
         cur.close()
         conn.close()
-        return jsonify({"error": "Board non trovata"}), 404
+        return jsonify({"error": "Board not found"}), 404
 
     title = (request.form.get("title") or "").strip()
     description = (request.form.get("description") or "").strip() or None
@@ -290,7 +290,7 @@ def create_card(board_id):
     if not title:
         cur.close()
         conn.close()
-        return jsonify({"error": "Il titolo è obbligatorio"}), 400
+        return jsonify({"error": "Title is required"}), 400
 
     image_path = None
     if "image" in request.files:
@@ -300,7 +300,7 @@ def create_card(board_id):
             if ext not in ("jpg", "jpeg", "png"):
                 cur.close()
                 conn.close()
-                return jsonify({"error": "Solo immagini jpg/png sono accettate"}), 400
+                return jsonify({"error": "Only jpg/png images are accepted"}), 400
             filename = f"{uuid.uuid4().hex}.{ext}"
             file.save(os.path.join(UPLOAD_FOLDER, filename))
             image_path = f"/static/uploads/{filename}"
@@ -328,7 +328,7 @@ def update_card(card_id):
     if not card_belongs_to_user(card_id, request.user_id, cur):
         cur.close()
         conn.close()
-        return jsonify({"error": "Card non trovata"}), 404
+        return jsonify({"error": "Card not found"}), 404
 
     content_type = request.content_type or ""
     if "multipart/form-data" in content_type:
@@ -337,7 +337,7 @@ def update_card(card_id):
         if not title:
             cur.close()
             conn.close()
-            return jsonify({"error": "Il titolo è obbligatorio"}), 400
+            return jsonify({"error": "Title is required"}), 400
         fields = ["title = %s", "description = %s"]
         values = [title, description]
         pin_position = request.form.get("pin_position")
@@ -351,7 +351,7 @@ def update_card(card_id):
                 if ext not in ("jpg", "jpeg", "png"):
                     cur.close()
                     conn.close()
-                    return jsonify({"error": "Solo immagini jpg/png sono accettate"}), 400
+                    return jsonify({"error": "Only jpg/png images are accepted"}), 400
                 filename = f"{uuid.uuid4().hex}.{ext}"
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 fields.append("image_path = %s")
@@ -368,7 +368,7 @@ def update_card(card_id):
         if not fields:
             cur.close()
             conn.close()
-            return jsonify({"error": "Niente da aggiornare"}), 400
+            return jsonify({"error": "Nothing to update"}), 400
         values.append(card_id)
 
     cur.execute(
@@ -391,7 +391,7 @@ def delete_card(card_id):
     if not card_belongs_to_user(card_id, request.user_id, cur):
         cur.close()
         conn.close()
-        return jsonify({"error": "Card non trovata"}), 404
+        return jsonify({"error": "Card not found"}), 404
     cur.execute("DELETE FROM cards WHERE id = %s", (card_id,))
     conn.commit()
     cur.close()
@@ -409,7 +409,7 @@ def create_note(board_id):
     if not board_belongs_to_user(board_id, request.user_id, cur):
         cur.close()
         conn.close()
-        return jsonify({"error": "Board non trovata"}), 404
+        return jsonify({"error": "Board not found"}), 404
 
     data = request.get_json()
     content = (data.get("content") or "").strip()
@@ -435,7 +435,7 @@ def update_note(note_id):
     if not note_belongs_to_user(note_id, request.user_id, cur):
         cur.close()
         conn.close()
-        return jsonify({"error": "Nota non trovata"}), 404
+        return jsonify({"error": "Note not found"}), 404
 
     data = request.get_json()
     fields = []
@@ -469,7 +469,7 @@ def delete_note(note_id):
     if not note_belongs_to_user(note_id, request.user_id, cur):
         cur.close()
         conn.close()
-        return jsonify({"error": "Nota non trovata"}), 404
+        return jsonify({"error": "Note not found"}), 404
     cur.execute("DELETE FROM notes WHERE id = %s", (note_id,))
     conn.commit()
     cur.close()
@@ -486,7 +486,7 @@ def create_connection():
     id1 = data.get("card_id_1")
     id2 = data.get("card_id_2")
     if not id1 or not id2:
-        return jsonify({"error": "Entrambi gli ID delle card sono obbligatori"}), 400
+        return jsonify({"error": "Both card IDs are required"}), 400
     if id1 > id2:
         id1, id2 = id2, id1
 
@@ -495,7 +495,7 @@ def create_connection():
     if not card_belongs_to_user(id1, request.user_id, cur) or not card_belongs_to_user(id2, request.user_id, cur):
         cur.close()
         conn.close()
-        return jsonify({"error": "Card non trovata"}), 404
+        return jsonify({"error": "Card not found"}), 404
 
     try:
         cur.execute(
@@ -512,7 +512,7 @@ def create_connection():
         conn.rollback()
         cur.close()
         conn.close()
-        return jsonify({"error": "Connessione già esistente"}), 409
+        return jsonify({"error": "Connection already exists"}), 409
 
 
 @app.route("/api/connections", methods=["DELETE"])
@@ -529,7 +529,7 @@ def delete_connection():
     if not card_belongs_to_user(id1, request.user_id, cur) or not card_belongs_to_user(id2, request.user_id, cur):
         cur.close()
         conn.close()
-        return jsonify({"error": "Card non trovata"}), 404
+        return jsonify({"error": "Card not found"}), 404
 
     cur.execute(
         "DELETE FROM connections WHERE card_id_1 = %s AND card_id_2 = %s",
