@@ -101,3 +101,17 @@ Se una card viene tenuta "premuta" con il mouse sinistro e spostata, questa si s
 Il filo rosso non deve essere una banale linea rossa. Deve sembrare un filo di lana, e "sentire la gravità". Dovra' incurvarsi leggermente verso il basso simulando la leggera gravità che il filo sente.
 
 Il filo rosso deve apparire **sopra** le card.
+
+## Panning e Zoom
+
+La board può essere "pannata" tramite click middle mouse e drag in qualsiasi punto, e zoommata tramite scroll wheel in qualsiasi punto.
+
+Tramite pan e zoom l'investigatore può gestire board anche complesse, avendo una visione panoramica di tutti gli elementi.
+
+### Pan
+
+L'applicazione deve tenere traccia della posizione originale in modo che sia possibile resettare il pan. Il reset del pan è possibile tramite un pulsante in alto a destra che appare solamente se l'utente ha fatto un pan.
+
+### Zoom
+
+Lo zoom deve essere fluido e deve agire su ogni elemento della board.

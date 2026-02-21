@@ -6,6 +6,13 @@ let selectedCardIds = new Set();
 let editingCardId = null;
 let pendingCreatePos = null; // position from dblclick on empty board area
 
+// ---- Pan / Zoom state ----
+let panX = 0;
+let panY = 0;
+let zoom = 1;
+const MIN_ZOOM = 0.15;
+const MAX_ZOOM = 4;
+
 // ---- Init ----
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -18,8 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === document.getElementById('modal-overlay')) closeModal();
     });
     document.getElementById('board').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('board') ||
-            e.target === document.getElementById('connections-svg')) {
+        const board = document.getElementById('board');
+        const canvas = document.getElementById('canvas');
+        const svg = document.getElementById('connections-svg');
+        if (e.target === board || e.target === canvas || e.target === svg) {
             deselectAll();
         }
     });
@@ -27,11 +36,59 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('board').addEventListener('dblclick', (e) => {
         if (!currentBoardId) return;
         const board = document.getElementById('board');
-        if (e.target !== board && e.target !== document.getElementById('connections-svg')) return;
+        const canvas = document.getElementById('canvas');
+        const svg = document.getElementById('connections-svg');
+        if (e.target !== board && e.target !== canvas && e.target !== svg) return;
         const rect = board.getBoundingClientRect();
-        pendingCreatePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        // Convert screen coordinates to canvas coordinates
+        pendingCreatePos = {
+            x: (e.clientX - rect.left - panX) / zoom,
+            y: (e.clientY - rect.top - panY) / zoom,
+        };
         openModal();
     });
+
+    // Middle mouse button pan
+    document.getElementById('board').addEventListener('mousedown', (e) => {
+        if (e.button !== 1) return;
+        e.preventDefault();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startPanX = panX;
+        const startPanY = panY;
+        document.getElementById('board').classList.add('panning');
+
+        function onMouseMove(e) {
+            panX = startPanX + (e.clientX - startX);
+            panY = startPanY + (e.clientY - startY);
+            updateTransform();
+        }
+        function onMouseUp() {
+            document.getElementById('board').classList.remove('panning');
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // Scroll wheel zoom (centered on cursor)
+    document.getElementById('board').addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const board = document.getElementById('board');
+        const rect = board.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+
+        // Adjust pan so the canvas point under the cursor stays fixed
+        panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+        panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+        zoom = newZoom;
+        updateTransform();
+    }, { passive: false });
 
     document.addEventListener('keydown', (e) => {
         if ((e.key === 'Delete' || e.key === 'Del') && selectedCardIds.size > 0) {
@@ -43,6 +100,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ---- Pan / Zoom ----
+
+function updateTransform() {
+    document.getElementById('canvas').style.transform =
+        `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    document.getElementById('reset-pan-btn').style.display =
+        (panX !== 0 || panY !== 0) ? 'inline-block' : 'none';
+}
+
+function resetPan() {
+    panX = 0;
+    panY = 0;
+    updateTransform();
+}
 
 // ---- Menu ----
 
@@ -147,7 +219,7 @@ function clearBoard() {
 function addCard(cardData) {
     const card = { ...cardData };
     card.el = createCardElement(card);
-    document.getElementById('board').appendChild(card.el);
+    document.getElementById('canvas').appendChild(card.el);
     cards.push(card);
     return card;
 }
@@ -190,8 +262,13 @@ async function onCreateCard(e) {
         x = pendingCreatePos.x;
         y = pendingCreatePos.y;
     } else {
-        x = 150 + Math.random() * (window.innerWidth - 450);
-        y = 100 + Math.random() * (window.innerHeight - 300);
+        // Place randomly within the currently visible canvas area
+        const viewW = window.innerWidth / zoom;
+        const viewH = window.innerHeight / zoom;
+        const originX = -panX / zoom;
+        const originY = -panY / zoom;
+        x = originX + Math.max(20, viewW * 0.1) + Math.random() * Math.max(100, viewW * 0.7);
+        y = originY + Math.max(20, viewH * 0.1) + Math.random() * Math.max(100, viewH * 0.6);
     }
     fd.append('pos_x', x.toFixed(0));
     fd.append('pos_y', y.toFixed(0));
@@ -229,8 +306,8 @@ function makeDraggable(el, card) {
                 isDragging = true;
             }
             if (isDragging) {
-                card.pos_x = startPosX + dx;
-                card.pos_y = startPosY + dy;
+                card.pos_x = startPosX + dx / zoom;
+                card.pos_y = startPosY + dy / zoom;
                 el.style.left = card.pos_x + 'px';
                 el.style.top = card.pos_y + 'px';
                 renderConnections();

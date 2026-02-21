@@ -5,11 +5,16 @@
 {% block content %}
 <!-- Cork board -->
 <div id="board">
-    <svg id="connections-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="canvas">
+        <svg id="connections-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
     <div id="no-board-msg">
         <p>Open the menu to load or create a board</p>
     </div>
 </div>
+
+<!-- Reset pan button (top-right, visible only when panned) -->
+<button id="reset-pan-btn" onclick="resetPan()" title="Reset pan" style="display:none;">&#8982; Reset Pan</button>
 
 <!-- Menu toggle -->
 <button id="menu-toggle" onclick="toggleMenu()" title="Toggle boards menu">&#9776; Boards</button>
