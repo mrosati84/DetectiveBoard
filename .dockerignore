@@ -1,0 +1,29 @@
+# Virtualenv locale (ricostruito nel builder stage)
+.venv/
+
+# File di ambiente con segreti
+.env
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Editor e OS
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Upload locali
+static/uploads/
+
+# Documentazione
+*.md
