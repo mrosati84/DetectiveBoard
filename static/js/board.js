@@ -1,10 +1,13 @@
 // ---- State ----
 let currentBoardId = null;
 let cards = [];        // [{id, title, description, image_path, pos_x, pos_y, el}]
+let notes = [];        // [{id, content, pos_x, pos_y, el}]
 let connections = [];  // [{id, card_id_1, card_id_2}]
 let selectedCardIds = new Set();
+let selectedNoteIds = new Set();
 let editingCardId = null;
 let pendingCreatePos = null; // position from dblclick on empty board area
+let pendingNoteCreatePos = null;
 
 // ---- Pan / Zoom state ----
 let panX = 0;
@@ -20,9 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('new-board-form').addEventListener('submit', onCreateBoard);
     document.getElementById('card-form').addEventListener('submit', onCreateCard);
+    document.getElementById('note-form').addEventListener('submit', onCreateNote);
     document.getElementById('edit-card-form').addEventListener('submit', onSaveEditCard);
     document.getElementById('modal-overlay').addEventListener('click', (e) => {
         if (e.target === document.getElementById('modal-overlay')) closeModal();
+    });
+    document.getElementById('note-modal-overlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('note-modal-overlay')) closeNoteModal();
     });
     document.getElementById('board').addEventListener('click', (e) => {
         const board = document.getElementById('board');
@@ -91,11 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
 
     document.addEventListener('keydown', (e) => {
-        if ((e.key === 'Delete' || e.key === 'Del') && selectedCardIds.size > 0) {
-            deleteSelectedCards();
+        if (e.key === 'Delete' || e.key === 'Del') {
+            if (selectedCardIds.size > 0 || selectedNoteIds.size > 0) {
+                deleteSelected();
+            }
         }
         if (e.key === 'Escape') {
             closeModal();
+            closeNoteModal();
             closeEditPanel();
         }
     });
@@ -180,6 +190,7 @@ async function deleteBoard(boardId, boardName) {
             currentBoardId = null;
             clearBoard();
             document.getElementById('no-board-msg').style.display = '';
+            document.getElementById('toolbar').style.display = 'none';
         }
         loadBoards();
     }
@@ -197,9 +208,11 @@ async function loadBoard(boardId) {
 
     connections = data.connections;
     data.cards.forEach(card => addCard(card));
+    (data.notes || []).forEach(note => addNote(note));
     renderConnections();
 
     document.getElementById('no-board-msg').style.display = 'none';
+    document.getElementById('toolbar').style.display = '';
 
     // Refresh list to show active state
     loadBoards();
@@ -207,9 +220,12 @@ async function loadBoard(boardId) {
 
 function clearBoard() {
     document.querySelectorAll('.card').forEach(el => el.remove());
+    document.querySelectorAll('.note').forEach(el => el.remove());
     document.getElementById('connections-svg').innerHTML = '';
     selectedCardIds.clear();
+    selectedNoteIds.clear();
     cards = [];
+    notes = [];
     connections = [];
     updateToolbar();
 }
@@ -341,6 +357,11 @@ function toggleSelection(cardId, additive) {
             const c = cards.find(x => x.id === id);
             if (c) c.el.classList.remove('selected');
         });
+        selectedNoteIds.forEach(id => {
+            const n = notes.find(x => x.id === id);
+            if (n) n.el.classList.remove('selected');
+        });
+        selectedNoteIds.clear();
         const wasSelected = selectedCardIds.has(cardId);
         selectedCardIds.clear();
         if (!wasSelected) {
@@ -360,12 +381,50 @@ function toggleSelection(cardId, additive) {
     updateToolbar();
 }
 
+function toggleNoteSelection(noteId, additive) {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+
+    if (!additive) {
+        selectedCardIds.forEach(id => {
+            const c = cards.find(x => x.id === id);
+            if (c) c.el.classList.remove('selected');
+        });
+        selectedCardIds.clear();
+        selectedNoteIds.forEach(id => {
+            const n = notes.find(x => x.id === id);
+            if (n) n.el.classList.remove('selected');
+        });
+        const wasSelected = selectedNoteIds.has(noteId);
+        selectedNoteIds.clear();
+        if (!wasSelected) {
+            selectedNoteIds.add(noteId);
+            note.el.classList.add('selected');
+        }
+    } else {
+        if (selectedNoteIds.has(noteId)) {
+            selectedNoteIds.delete(noteId);
+            note.el.classList.remove('selected');
+        } else {
+            selectedNoteIds.add(noteId);
+            note.el.classList.add('selected');
+        }
+    }
+
+    updateToolbar();
+}
+
 function deselectAll() {
     selectedCardIds.forEach(id => {
         const c = cards.find(x => x.id === id);
         if (c) c.el.classList.remove('selected');
     });
     selectedCardIds.clear();
+    selectedNoteIds.forEach(id => {
+        const n = notes.find(x => x.id === id);
+        if (n) n.el.classList.remove('selected');
+    });
+    selectedNoteIds.clear();
     updateToolbar();
 }
 
@@ -487,15 +546,22 @@ function renderConnections() {
     });
 }
 
-// ---- Delete selected cards ----
+// ---- Delete selected items (cards + notes) ----
 
-async function deleteSelectedCards() {
-    const count = selectedCardIds.size;
-    const msg = count === 1 ? 'Delete this card?' : `Delete these ${count} cards?`;
+async function deleteSelected() {
+    const cardCount = selectedCardIds.size;
+    const noteCount = selectedNoteIds.size;
+    const total = cardCount + noteCount;
+    let msg;
+    if (total === 1) {
+        msg = cardCount === 1 ? 'Delete this card?' : 'Delete this note?';
+    } else {
+        msg = `Delete these ${total} items?`;
+    }
     if (!confirm(msg)) return;
 
-    const idsToDelete = [...selectedCardIds];
-    for (const id of idsToDelete) {
+    const cardIdsToDelete = [...selectedCardIds];
+    for (const id of cardIdsToDelete) {
         const res = await fetch(`/api/cards/${id}`, { method: 'DELETE' });
         if (res.ok) {
             const card = cards.find(c => c.id === id);
@@ -506,8 +572,205 @@ async function deleteSelectedCards() {
         }
     }
 
+    const noteIdsToDelete = [...selectedNoteIds];
+    for (const id of noteIdsToDelete) {
+        const res = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            const note = notes.find(n => n.id === id);
+            if (note) note.el.remove();
+            notes = notes.filter(n => n.id !== id);
+            selectedNoteIds.delete(id);
+        }
+    }
+
     renderConnections();
     updateToolbar();
+}
+
+// ---- Notes ----
+
+function addNote(noteData) {
+    const note = { ...noteData };
+    note.el = createNoteElement(note);
+    document.getElementById('canvas').appendChild(note.el);
+    notes.push(note);
+    return note;
+}
+
+function createNoteElement(note) {
+    const el = document.createElement('div');
+    el.className = 'note';
+    el.style.left = note.pos_x + 'px';
+    el.style.top = note.pos_y + 'px';
+    el.dataset.id = note.id;
+
+    const textEl = document.createElement('div');
+    textEl.className = 'note-text';
+    textEl.textContent = note.content;
+    el.appendChild(textEl);
+
+    el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        startNoteEdit(note, el);
+    });
+
+    makeNoteDraggable(el, note);
+    return el;
+}
+
+function startNoteEdit(note, el) {
+    const textEl = el.querySelector('.note-text');
+    if (!textEl) return;
+
+    const originalContent = note.content;
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'note-edit-area';
+    textarea.value = note.content;
+    el.replaceChild(textarea, textEl);
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    let saved = false;
+
+    function save() {
+        if (saved) return;
+        saved = true;
+        const newContent = textarea.value;
+        const newTextEl = document.createElement('div');
+        newTextEl.className = 'note-text';
+        newTextEl.textContent = newContent;
+        if (textarea.parentNode === el) {
+            el.replaceChild(newTextEl, textarea);
+        }
+        if (newContent !== originalContent) {
+            note.content = newContent;
+            saveNoteContent(note);
+        }
+    }
+
+    function cancel() {
+        if (saved) return;
+        saved = true;
+        const newTextEl = document.createElement('div');
+        newTextEl.className = 'note-text';
+        newTextEl.textContent = originalContent;
+        if (textarea.parentNode === el) {
+            el.replaceChild(newTextEl, textarea);
+        }
+    }
+
+    textarea.addEventListener('blur', save);
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            textarea.removeEventListener('blur', save);
+            cancel();
+        }
+    });
+}
+
+async function saveNoteContent(note) {
+    await fetch(`/api/notes/${note.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: note.content }),
+    });
+}
+
+async function saveNotePosition(note) {
+    await fetch(`/api/notes/${note.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pos_x: note.pos_x, pos_y: note.pos_y }),
+    });
+}
+
+function makeNoteDraggable(el, note) {
+    el.addEventListener('mousedown', (downEvent) => {
+        if (downEvent.button !== 0) return;
+        if (downEvent.target.tagName === 'TEXTAREA') return;
+        downEvent.preventDefault();
+        downEvent.stopPropagation();
+
+        const startX = downEvent.clientX;
+        const startY = downEvent.clientY;
+        const startPosX = note.pos_x;
+        const startPosY = note.pos_y;
+        let isDragging = false;
+
+        function onMouseMove(e) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            if (!isDragging && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+                isDragging = true;
+            }
+            if (isDragging) {
+                note.pos_x = startPosX + dx / zoom;
+                note.pos_y = startPosY + dy / zoom;
+                el.style.left = note.pos_x + 'px';
+                el.style.top = note.pos_y + 'px';
+            }
+        }
+
+        function onMouseUp(upEvent) {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            if (!isDragging) {
+                toggleNoteSelection(note.id, upEvent.shiftKey);
+            } else {
+                saveNotePosition(note);
+            }
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+}
+
+// ---- Note Modal ----
+
+function openNoteModal() {
+    if (!currentBoardId) return;
+    document.getElementById('note-modal-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('note-content').focus(), 50);
+}
+
+function closeNoteModal() {
+    document.getElementById('note-modal-overlay').classList.remove('open');
+    document.getElementById('note-form').reset();
+    pendingNoteCreatePos = null;
+}
+
+async function onCreateNote(e) {
+    e.preventDefault();
+    if (!currentBoardId) return;
+
+    const content = document.getElementById('note-content').value;
+
+    let x, y;
+    if (pendingNoteCreatePos) {
+        x = pendingNoteCreatePos.x;
+        y = pendingNoteCreatePos.y;
+    } else {
+        const viewW = window.innerWidth / zoom;
+        const viewH = window.innerHeight / zoom;
+        const originX = -panX / zoom;
+        const originY = -panY / zoom;
+        x = originX + Math.max(20, viewW * 0.1) + Math.random() * Math.max(100, viewW * 0.7);
+        y = originY + Math.max(20, viewH * 0.1) + Math.random() * Math.max(100, viewH * 0.6);
+    }
+
+    const res = await fetch(`/api/boards/${currentBoardId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, pos_x: Math.round(x), pos_y: Math.round(y) }),
+    });
+    if (res.ok) {
+        const noteData = await res.json();
+        closeNoteModal();
+        addNote(noteData);
+    }
 }
 
 // ---- Save card position ----

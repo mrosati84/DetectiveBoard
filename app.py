@@ -93,9 +93,14 @@ def get_board(board_id):
         (board_id, board_id),
     )
     connections = [dict(c) for c in cur.fetchall()]
+    cur.execute(
+        "SELECT id, content, pos_x, pos_y FROM notes WHERE board_id = %s",
+        (board_id,),
+    )
+    notes = [dict(n) for n in cur.fetchall()]
     cur.close()
     conn.close()
-    return jsonify({"board": dict(board), "cards": cards, "connections": connections})
+    return jsonify({"board": dict(board), "cards": cards, "connections": connections, "notes": notes})
 
 
 @app.route("/api/boards/<int:board_id>", methods=["DELETE"])
@@ -209,6 +214,65 @@ def delete_card(card_id):
     conn = get_db()
     cur = conn.cursor()
     cur.execute("DELETE FROM cards WHERE id = %s", (card_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"success": True})
+
+
+# ---- Notes ----
+
+@app.route("/api/boards/<int:board_id>/notes", methods=["POST"])
+def create_note(board_id):
+    data = request.get_json()
+    content = (data.get("content") or "").strip()
+    pos_x = float(data.get("pos_x", 200))
+    pos_y = float(data.get("pos_y", 150))
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        "INSERT INTO notes (board_id, content, pos_x, pos_y) VALUES (%s, %s, %s, %s) "
+        "RETURNING id, content, pos_x, pos_y",
+        (board_id, content, pos_x, pos_y),
+    )
+    note = dict(cur.fetchone())
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify(note), 201
+
+
+@app.route("/api/notes/<int:note_id>", methods=["PUT"])
+def update_note(note_id):
+    data = request.get_json()
+    fields = []
+    values = []
+    for field in ("content", "pos_x", "pos_y"):
+        if field in data:
+            fields.append(f"{field} = %s")
+            values.append(data[field])
+    if not fields:
+        return jsonify({"error": "Nothing to update"}), 400
+    values.append(note_id)
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        f"UPDATE notes SET {', '.join(fields)} WHERE id = %s "
+        "RETURNING id, content, pos_x, pos_y",
+        values,
+    )
+    note = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify(dict(note))
+
+
+@app.route("/api/notes/<int:note_id>", methods=["DELETE"])
+def delete_note(note_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM notes WHERE id = %s", (note_id,))
     conn.commit()
     cur.close()
     conn.close()

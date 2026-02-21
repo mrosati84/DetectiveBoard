@@ -102,6 +102,44 @@ Il filo rosso non deve essere una banale linea rossa. Deve sembrare un filo di l
 
 Il filo rosso deve apparire **sopra** le card.
 
+### Elemento: Note (Sticky Notes)
+
+Le note sono elementi semplici a forma di post-it, con sfondo giallo e font handwritten (Google Font **Caveat**).
+
+I campi della nota sono:
+
+- `content`: unico campo testo.
+
+#### Creazione di una nota
+
+Una nota può essere creata tramite il pulsante dedicato "📋 Add Note" nella toolbar. Apparirà un modale semplice con un campo textarea per il testo.
+
+#### Modifica di una nota
+
+È possibile modificare il testo di una nota esistente facendo **doppio click** sulla nota stessa. Appare una textarea inline al posto del testo. La modifica viene salvata automaticamente al click fuori dalla nota (blur). Il tasto `Escape` annulla la modifica senza salvare.
+
+#### Selezione e cancellazione delle note
+
+- Le note supportano lo stato `selected` con singolo click.
+- È possibile selezionare più note (o una combinazione di note e card) tenendo premuto `SHIFT`.
+- Premendo il tasto `DEL` con una o più note selezionate, le note vengono eliminate (con `confirm` del browser).
+- La selezione di una nota senza Shift deseleziona tutte le altre note e card.
+
+#### Trascinamento
+
+Le note possono essere riposizionate tramite drag & drop, come le card.
+
+#### Stile
+
+- Sfondo giallo (`#fef08a`) con ombra, stile post-it.
+- Font `Caveat` (Google Fonts), dimensione 17px.
+- Z-index: 9 (sotto le card a z-index 10, sotto il filo rosso a z-index 50).
+
+#### Limitazioni
+
+- Le note **non supportano** il collegamento tramite filo rosso.
+- I pulsanti "Connect" e "Disconnect" nella toolbar appaiono solo quando sono selezionate esattamente **2 card** (le note non influenzano questa logica).
+
 ## Panning e Zoom
 
 La board può essere "pannata" tramite click middle mouse e drag in qualsiasi punto, e zoommata tramite scroll wheel in qualsiasi punto.

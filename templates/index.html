@@ -30,8 +30,9 @@
 </div>
 
 <!-- Bottom toolbar -->
-<div id="toolbar">
+<div id="toolbar" style="display:none;">
     <button id="add-card-btn" class="toolbar-btn" onclick="openModal()">+ Add Card</button>
+    <button id="add-note-btn" class="toolbar-btn" onclick="openNoteModal()">&#128203; Add Note</button>
     <button id="connect-btn" class="toolbar-btn" onclick="connectCards()">&#128279; Connect</button>
     <button id="disconnect-btn" class="toolbar-btn" onclick="disconnectCards()">&#9986; Disconnect</button>
 </div>
@@ -71,6 +72,23 @@
             <button type="submit" class="btn-primary">Salva</button>
         </div>
     </form>
+</div>
+
+<!-- Note creation modal -->
+<div id="note-modal-overlay">
+    <div id="note-modal">
+        <h2>Nuova Nota</h2>
+        <form id="note-form">
+            <div class="form-group">
+                <label for="note-content">Testo</label>
+                <textarea id="note-content" name="content" placeholder="Scrivi qui..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeNoteModal()">Annulla</button>
+                <button type="submit" class="btn-primary">Crea Nota</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Card creation modal -->

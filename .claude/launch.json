@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "detectiveboard",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "flask", "--app", "app", "run", "--debug"],
+      "port": 5000
+    }
+  ]
+}
