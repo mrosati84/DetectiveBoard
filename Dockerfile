@@ -48,13 +48,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Cartella upload (sovrascrivibile via env)
 ENV UPLOAD_FOLDER=/app/uploads
 
-# Crea utente non-root, cartella uploads e rende eseguibile l'entrypoint
-RUN useradd -r -s /bin/false appuser \
-    && mkdir -p /app/uploads \
-    && chmod +x /app/entrypoint.sh \
-    && chown -R appuser:appuser /app
-
-USER appuser
+# Crea cartella uploads e rende eseguibile l'entrypoint
+RUN mkdir -p /app/uploads \
+    && chmod +x /app/entrypoint.sh
 
 EXPOSE 8080
 
