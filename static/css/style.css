@@ -45,7 +45,7 @@ body {
 
 #reset-pan-btn {
     position: fixed;
-    top: 16px;
+    top: 60px;
     right: 16px;
     z-index: 200;
     background: rgba(60, 30, 5, 0.9);
@@ -308,11 +308,146 @@ body {
     background: rgba(255, 255, 255, 0.5);
 }
 
+/* ---- Auth Header ---- */
+
+#auth-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 48px;
+    background: rgba(30, 14, 2, 0.96);
+    border-bottom: 1px solid rgba(255, 200, 100, 0.15);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+}
+
+#auth-logo {
+    font-size: 16px;
+    font-weight: bold;
+    color: #f5e6c8;
+    letter-spacing: 0.04em;
+    user-select: none;
+}
+
+#auth-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#auth-logged-out,
+#auth-logged-in {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#auth-email {
+    font-size: 13px;
+    color: rgba(245, 230, 200, 0.75);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.auth-btn {
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 220, 150, 0.3);
+    background: rgba(255, 255, 255, 0.07);
+    color: #f5e6c8;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+    letter-spacing: 0.02em;
+}
+
+.auth-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.auth-btn.auth-btn-primary {
+    background: #8b3a0a;
+    border-color: transparent;
+}
+
+.auth-btn.auth-btn-primary:hover {
+    background: #a84510;
+}
+
+/* ---- Auth Modals ---- */
+
+#login-modal-overlay,
+#register-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+}
+
+#login-modal-overlay.open,
+#register-modal-overlay.open {
+    display: flex;
+}
+
+#login-modal,
+#register-modal {
+    background: #fffef5;
+    border-radius: 8px;
+    padding: 28px 30px 22px;
+    width: 360px;
+    max-width: 94vw;
+    box-shadow: 0 12px 44px rgba(0, 0, 0, 0.55);
+}
+
+#login-modal h2,
+#register-modal h2 {
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #2a1500;
+}
+
+.auth-error {
+    color: #cc2200;
+    font-size: 12px;
+    min-height: 16px;
+    margin-bottom: 4px;
+}
+
+.auth-switch {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+}
+
+.auth-switch a {
+    color: #8b3a0a;
+    text-decoration: none;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
 /* ---- Menu toggle ---- */
 
 #menu-toggle {
     position: fixed;
-    top: 16px;
+    top: 60px;
     left: 16px;
     z-index: 200;
     background: rgba(60, 30, 5, 0.9);
@@ -347,7 +482,7 @@ body {
     transition: transform 0.28s ease;
     display: flex;
     flex-direction: column;
-    padding: 64px 16px 20px;
+    padding: 108px 16px 20px;
     border-right: 1px solid rgba(255, 200, 100, 0.15);
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
 }

@@ -1,4 +1,133 @@
-// ---- State ----
+// ---- Auth state ----
+const TOKEN_KEY = 'db_token';
+let currentUser = null; // { id, email }
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+function authHeaders(extra) {
+    const h = Object.assign({}, extra);
+    const token = getToken();
+    if (token) h['Authorization'] = 'Bearer ' + token;
+    return h;
+}
+
+async function checkAuth() {
+    const token = getToken();
+    if (!token) { onLoggedOut(); return; }
+    const res = await fetch('/api/auth/me', { headers: authHeaders() });
+    if (res.ok) {
+        currentUser = await res.json();
+        onLoggedIn();
+    } else {
+        clearToken();
+        onLoggedOut();
+    }
+}
+
+function onLoggedIn() {
+    document.getElementById('auth-email').textContent = currentUser.email;
+    document.getElementById('auth-logged-out').style.display = 'none';
+    document.getElementById('auth-logged-in').style.display = 'flex';
+    document.getElementById('menu-toggle').style.display = '';
+    document.getElementById('no-board-text').textContent = 'Apri il menu per caricare o creare una board';
+    loadBoards();
+}
+
+function onLoggedOut() {
+    currentUser = null;
+    document.getElementById('auth-logged-out').style.display = 'flex';
+    document.getElementById('auth-logged-in').style.display = 'none';
+    document.getElementById('menu-toggle').style.display = 'none';
+    closeMenu();
+    currentBoardId = null;
+    clearBoard();
+    document.getElementById('no-board-msg').style.display = '';
+    document.getElementById('toolbar').style.display = 'none';
+    document.getElementById('no-board-text').textContent = 'Accedi per usare DetectiveBoard';
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+    errorEl.textContent = '';
+    const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+        setToken(data.token);
+        currentUser = { email: data.email };
+        closeLoginModal();
+        onLoggedIn();
+    } else {
+        errorEl.textContent = data.error || 'Accesso fallito';
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const errorEl = document.getElementById('register-error');
+    errorEl.textContent = '';
+    const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+        setToken(data.token);
+        currentUser = { email: data.email };
+        closeRegisterModal();
+        onLoggedIn();
+    } else {
+        errorEl.textContent = data.error || 'Registrazione fallita';
+    }
+}
+
+function logout() {
+    clearToken();
+    onLoggedOut();
+}
+
+function openLoginModal() {
+    document.getElementById('login-modal-overlay').classList.add('open');
+    document.getElementById('login-form').reset();
+    document.getElementById('login-error').textContent = '';
+    setTimeout(() => document.getElementById('login-email').focus(), 50);
+}
+
+function closeLoginModal() {
+    document.getElementById('login-modal-overlay').classList.remove('open');
+}
+
+function openRegisterModal() {
+    document.getElementById('register-modal-overlay').classList.add('open');
+    document.getElementById('register-form').reset();
+    document.getElementById('register-error').textContent = '';
+    setTimeout(() => document.getElementById('register-email').focus(), 50);
+}
+
+function closeRegisterModal() {
+    document.getElementById('register-modal-overlay').classList.remove('open');
+}
+
+// Handle 401 globally: clear token and show login
+function handleUnauthorized() {
+    clearToken();
+    currentUser = null;
+    onLoggedOut();
+    openLoginModal();
+}
+
+// ---- Board state ----
 let currentBoardId = null;
 let cards = [];        // [{id, title, description, image_path, pos_x, pos_y, el}]
 let notes = [];        // [{id, content, pos_x, pos_y, el}]
@@ -6,7 +135,7 @@ let connections = [];  // [{id, card_id_1, card_id_2}]
 let selectedCardIds = new Set();
 let selectedNoteIds = new Set();
 let editingCardId = null;
-let pendingCreatePos = null; // position from dblclick on empty board area
+let pendingCreatePos = null;
 let pendingNoteCreatePos = null;
 
 // ---- Pan / Zoom state ----
@@ -19,18 +148,28 @@ const MAX_ZOOM = 4;
 // ---- Init ----
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadBoards();
+    checkAuth();
 
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('register-form').addEventListener('submit', handleRegister);
     document.getElementById('new-board-form').addEventListener('submit', onCreateBoard);
     document.getElementById('card-form').addEventListener('submit', onCreateCard);
     document.getElementById('note-form').addEventListener('submit', onCreateNote);
     document.getElementById('edit-card-form').addEventListener('submit', onSaveEditCard);
+
     document.getElementById('modal-overlay').addEventListener('click', (e) => {
         if (e.target === document.getElementById('modal-overlay')) closeModal();
     });
     document.getElementById('note-modal-overlay').addEventListener('click', (e) => {
         if (e.target === document.getElementById('note-modal-overlay')) closeNoteModal();
     });
+    document.getElementById('login-modal-overlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('login-modal-overlay')) closeLoginModal();
+    });
+    document.getElementById('register-modal-overlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('register-modal-overlay')) closeRegisterModal();
+    });
+
     document.getElementById('board').addEventListener('click', () => {
         closeMenu();
     });
@@ -50,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const svg = document.getElementById('connections-svg');
         if (e.target !== board && e.target !== canvas && e.target !== svg) return;
         const rect = board.getBoundingClientRect();
-        // Convert screen coordinates to canvas coordinates
         pendingCreatePos = {
             x: (e.clientX - rect.left - panX) / zoom,
             y: (e.clientY - rect.top - panY) / zoom,
@@ -82,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('mouseup', onMouseUp);
     });
 
-    // Scroll wheel zoom (centered on cursor)
+    // Scroll wheel zoom
     document.getElementById('board').addEventListener('wheel', (e) => {
         e.preventDefault();
         const board = document.getElementById('board');
@@ -93,7 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const factor = e.deltaY < 0 ? 1.1 : 0.9;
         const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
 
-        // Adjust pan so the canvas point under the cursor stays fixed
         panX = mouseX - (mouseX - panX) * (newZoom / zoom);
         panY = mouseY - (mouseY - panY) * (newZoom / zoom);
         zoom = newZoom;
@@ -111,6 +248,8 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             closeNoteModal();
             closeEditPanel();
+            closeLoginModal();
+            closeRegisterModal();
         }
     });
 });
@@ -141,7 +280,8 @@ function closeMenu() {
 }
 
 async function loadBoards() {
-    const res = await fetch('/api/boards');
+    const res = await fetch('/api/boards', { headers: authHeaders() });
+    if (res.status === 401) { handleUnauthorized(); return; }
     const data = await res.json();
     renderBoardsList(data);
 }
@@ -150,7 +290,7 @@ function renderBoardsList(boardsData) {
     const list = document.getElementById('boards-list');
     list.innerHTML = '';
     if (boardsData.length === 0) {
-        list.innerHTML = '<p style="font-size:12px;opacity:0.5;padding:6px 0">No boards yet.</p>';
+        list.innerHTML = '<p style="font-size:12px;opacity:0.5;padding:6px 0">Nessuna board ancora.</p>';
         return;
     }
     boardsData.forEach(b => {
@@ -158,8 +298,8 @@ function renderBoardsList(boardsData) {
         item.className = 'board-item' + (b.id === currentBoardId ? ' active' : '');
         item.innerHTML = `
             <span class="board-item-name">${escHtml(b.name)}</span>
-            <button class="board-rename-btn" title="Rename board">✎</button>
-            <button class="board-delete-btn" title="Delete board">&times;</button>
+            <button class="board-rename-btn" title="Rinomina board">✎</button>
+            <button class="board-delete-btn" title="Elimina board">&times;</button>
         `;
         item.querySelector('.board-item-name').addEventListener('click', () => {
             document.getElementById('menu').classList.remove('open');
@@ -184,9 +324,10 @@ async function onCreateBoard(e) {
     if (!name) return;
     const res = await fetch('/api/boards', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ name }),
     });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) {
         const board = await res.json();
         input.value = '';
@@ -218,11 +359,12 @@ function startRenameBoard(item, b) {
         done = true;
         const newName = input.value.trim();
         if (newName && newName !== b.name) {
-            await fetch(`/api/boards/${b.id}`, {
+            const res = await fetch(`/api/boards/${b.id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ name: newName }),
             });
+            if (res.status === 401) { handleUnauthorized(); return; }
         }
         loadBoards();
     };
@@ -241,8 +383,12 @@ function startRenameBoard(item, b) {
 }
 
 async function deleteBoard(boardId, boardName) {
-    if (!confirm(`Delete board "${boardName}"?\nAll cards and connections will be lost.`)) return;
-    const res = await fetch(`/api/boards/${boardId}`, { method: 'DELETE' });
+    if (!confirm(`Eliminare la board "${boardName}"?\nTutte le card e le connessioni andranno perse.`)) return;
+    const res = await fetch(`/api/boards/${boardId}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+    });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) {
         if (currentBoardId === boardId) {
             currentBoardId = null;
@@ -257,7 +403,8 @@ async function deleteBoard(boardId, boardName) {
 // ---- Board loading ----
 
 async function loadBoard(boardId) {
-    const res = await fetch(`/api/boards/${boardId}`);
+    const res = await fetch(`/api/boards/${boardId}`, { headers: authHeaders() });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (!res.ok) return;
     const data = await res.json();
 
@@ -272,7 +419,6 @@ async function loadBoard(boardId) {
     document.getElementById('no-board-msg').style.display = 'none';
     document.getElementById('toolbar').style.display = '';
 
-    // Refresh list to show active state
     loadBoards();
 }
 
@@ -336,7 +482,6 @@ async function onCreateCard(e) {
         x = pendingCreatePos.x;
         y = pendingCreatePos.y;
     } else {
-        // Place randomly within the currently visible canvas area
         const viewW = window.innerWidth / zoom;
         const viewH = window.innerHeight / zoom;
         const originX = -panX / zoom;
@@ -349,8 +494,10 @@ async function onCreateCard(e) {
 
     const res = await fetch(`/api/boards/${currentBoardId}/cards`, {
         method: 'POST',
+        headers: authHeaders(),
         body: fd,
     });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) {
         const cardData = await res.json();
         closeModal();
@@ -520,9 +667,10 @@ async function connectCards() {
     const [id1, id2] = [...selectedCardIds];
     const res = await fetch('/api/connections', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ card_id_1: id1, card_id_2: id2 }),
     });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) {
         const conn = await res.json();
         connections.push(conn);
@@ -535,9 +683,10 @@ async function disconnectCards() {
     const [id1, id2] = [...selectedCardIds];
     const res = await fetch('/api/connections', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ card_id_1: id1, card_id_2: id2 }),
     });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) {
         connections = connections.filter(c =>
             !((c.card_id_1 === id1 && c.card_id_2 === id2) ||
@@ -555,12 +704,12 @@ function renderConnections() {
     svg.innerHTML = '';
 
     const CARD_WIDTH = 210;
-    const PIN_Y_OFFSET = 4; // near the pin at top of card
+    const PIN_Y_OFFSET = 4;
 
     function pinCenterX(card) {
         const pos = card.pin_position || 'center';
-        if (pos === 'left') return card.pos_x + 32;   // 22px left + 10px half-pin
-        if (pos === 'right') return card.pos_x + CARD_WIDTH - 32; // right: 22px, center
+        if (pos === 'left') return card.pos_x + 32;
+        if (pos === 'right') return card.pos_x + CARD_WIDTH - 32;
         return card.pos_x + CARD_WIDTH / 2;
     }
 
@@ -577,13 +726,11 @@ function renderConnections() {
         const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
         const sag = Math.max(40, dist * 0.22);
 
-        // Cubic Bézier — control points pulled downward to simulate gravity
         const cp1x = x1 + (x2 - x1) * 0.25;
         const cp1y = y1 + sag;
         const cp2x = x1 + (x2 - x1) * 0.75;
         const cp2y = y2 + sag;
 
-        // Subtle texture: slightly thicker white shadow path beneath
         const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         shadow.setAttribute('d', `M ${x1} ${y1} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${x2} ${y2}`);
         shadow.setAttribute('stroke', 'rgba(0,0,0,0.25)');
@@ -592,7 +739,6 @@ function renderConnections() {
         shadow.setAttribute('stroke-linecap', 'round');
         svg.appendChild(shadow);
 
-        // Main red yarn path
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', `M ${x1} ${y1} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${x2} ${y2}`);
         path.setAttribute('stroke', '#cc1a00');
@@ -604,7 +750,7 @@ function renderConnections() {
     });
 }
 
-// ---- Delete selected items (cards + notes) ----
+// ---- Delete selected items ----
 
 async function deleteSelected() {
     const cardCount = selectedCardIds.size;
@@ -612,15 +758,19 @@ async function deleteSelected() {
     const total = cardCount + noteCount;
     let msg;
     if (total === 1) {
-        msg = cardCount === 1 ? 'Delete this card?' : 'Delete this note?';
+        msg = cardCount === 1 ? 'Eliminare questa card?' : 'Eliminare questa nota?';
     } else {
-        msg = `Delete these ${total} items?`;
+        msg = `Eliminare questi ${total} elementi?`;
     }
     if (!confirm(msg)) return;
 
     const cardIdsToDelete = [...selectedCardIds];
     for (const id of cardIdsToDelete) {
-        const res = await fetch(`/api/cards/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/cards/${id}`, {
+            method: 'DELETE',
+            headers: authHeaders(),
+        });
+        if (res.status === 401) { handleUnauthorized(); return; }
         if (res.ok) {
             const card = cards.find(c => c.id === id);
             if (card) card.el.remove();
@@ -632,7 +782,11 @@ async function deleteSelected() {
 
     const noteIdsToDelete = [...selectedNoteIds];
     for (const id of noteIdsToDelete) {
-        const res = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/notes/${id}`, {
+            method: 'DELETE',
+            headers: authHeaders(),
+        });
+        if (res.status === 401) { handleUnauthorized(); return; }
         if (res.ok) {
             const note = notes.find(n => n.id === id);
             if (note) note.el.remove();
@@ -729,19 +883,21 @@ function startNoteEdit(note, el) {
 }
 
 async function saveNoteContent(note) {
-    await fetch(`/api/notes/${note.id}`, {
+    const res = await fetch(`/api/notes/${note.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ content: note.content }),
     });
+    if (res.status === 401) handleUnauthorized();
 }
 
 async function saveNotePosition(note) {
-    await fetch(`/api/notes/${note.id}`, {
+    const res = await fetch(`/api/notes/${note.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ pos_x: note.pos_x, pos_y: note.pos_y }),
     });
+    if (res.status === 401) handleUnauthorized();
 }
 
 function makeNoteDraggable(el, note) {
@@ -821,9 +977,10 @@ async function onCreateNote(e) {
 
     const res = await fetch(`/api/boards/${currentBoardId}/notes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ content, pos_x: Math.round(x), pos_y: Math.round(y) }),
     });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) {
         const noteData = await res.json();
         closeNoteModal();
@@ -834,11 +991,12 @@ async function onCreateNote(e) {
 // ---- Save card position ----
 
 async function saveCardPosition(card) {
-    await fetch(`/api/cards/${card.id}`, {
+    const res = await fetch(`/api/cards/${card.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ pos_x: card.pos_x, pos_y: card.pos_y }),
     });
+    if (res.status === 401) handleUnauthorized();
 }
 
 // ---- Modal ----
@@ -896,9 +1054,10 @@ async function onSaveEditCard(e) {
     const fd = new FormData(e.target);
     const res = await fetch(`/api/cards/${editingCardId}`, {
         method: 'PUT',
+        headers: authHeaders(),
         body: fd,
     });
-
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) {
         const updated = await res.json();
         const card = cards.find(c => c.id === editingCardId);

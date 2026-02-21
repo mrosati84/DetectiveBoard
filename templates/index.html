@@ -3,27 +3,42 @@
 {% block title %}DetectiveBoard{% endblock %}
 
 {% block content %}
+<!-- Auth header -->
+<header id="auth-header">
+    <div id="auth-logo">&#128269; DetectiveBoard</div>
+    <div id="auth-controls">
+        <div id="auth-logged-out">
+            <button class="auth-btn" onclick="openRegisterModal()">Registrati</button>
+            <button class="auth-btn auth-btn-primary" onclick="openLoginModal()">Accedi</button>
+        </div>
+        <div id="auth-logged-in" style="display:none;">
+            <span id="auth-email"></span>
+            <button class="auth-btn" onclick="logout()">Esci</button>
+        </div>
+    </div>
+</header>
+
 <!-- Cork board -->
 <div id="board">
     <div id="canvas">
         <svg id="connections-svg" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
     <div id="no-board-msg">
-        <p>Open the menu to load or create a board</p>
+        <p id="no-board-text">Apri il menu per caricare o creare una board</p>
     </div>
 </div>
 
 <!-- Reset pan button (top-right, visible only when panned) -->
 <button id="reset-pan-btn" onclick="resetPan()" title="Reset pan" style="display:none;">&#8982; Reset Pan</button>
 
-<!-- Menu toggle -->
-<button id="menu-toggle" onclick="toggleMenu()" title="Toggle boards menu">&#9776; Boards</button>
+<!-- Menu toggle (hidden until logged in) -->
+<button id="menu-toggle" onclick="toggleMenu()" title="Toggle boards menu" style="display:none;">&#9776; Boards</button>
 
 <!-- Left slide-in menu -->
 <div id="menu">
     <h2>Boards</h2>
     <form id="new-board-form">
-        <input type="text" id="new-board-name" placeholder="Board name..." maxlength="100" autocomplete="off">
+        <input type="text" id="new-board-name" placeholder="Nome board..." maxlength="100" autocomplete="off">
         <button type="submit" id="create-board-btn" title="Create board">+</button>
     </form>
     <div id="boards-list"></div>
@@ -31,10 +46,10 @@
 
 <!-- Bottom toolbar -->
 <div id="toolbar" style="display:none;">
-    <button id="add-card-btn" class="toolbar-btn" onclick="openModal()">+ Add Card</button>
-    <button id="add-note-btn" class="toolbar-btn" onclick="openNoteModal()">&#128203; Add Note</button>
-    <button id="connect-btn" class="toolbar-btn" onclick="connectCards()">&#128279; Connect</button>
-    <button id="disconnect-btn" class="toolbar-btn" onclick="disconnectCards()">&#9986; Disconnect</button>
+    <button id="add-card-btn" class="toolbar-btn" onclick="openModal()">+ Card</button>
+    <button id="add-note-btn" class="toolbar-btn" onclick="openNoteModal()">&#128203; Nota</button>
+    <button id="connect-btn" class="toolbar-btn" onclick="connectCards()">&#128279; Collega</button>
+    <button id="disconnect-btn" class="toolbar-btn" onclick="disconnectCards()">&#9986; Scollega</button>
 </div>
 
 <!-- Card edit panel (right side) -->
@@ -94,25 +109,71 @@
 <!-- Card creation modal -->
 <div id="modal-overlay">
     <div id="modal">
-        <h2>New Card</h2>
+        <h2>Nuova Card</h2>
         <form id="card-form" enctype="multipart/form-data">
             <div class="form-group">
-                <label for="card-title">Title <span class="required">*</span></label>
+                <label for="card-title">Titolo <span class="required">*</span></label>
                 <input type="text" id="card-title" name="title" required maxlength="200" autocomplete="off">
             </div>
             <div class="form-group">
-                <label for="card-description">Description</label>
-                <textarea id="card-description" name="description" placeholder="Optional notes..."></textarea>
+                <label for="card-description">Descrizione</label>
+                <textarea id="card-description" name="description" placeholder="Note opzionali..."></textarea>
             </div>
             <div class="form-group">
-                <label for="card-image">Image <span class="hint">(jpg/png, max 1MB)</span></label>
+                <label for="card-image">Immagine <span class="hint">(jpg/png, max 1MB)</span></label>
                 <input type="file" id="card-image" name="image" accept=".jpg,.jpeg,.png">
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Create Card</button>
+                <button type="button" class="btn-secondary" onclick="closeModal()">Annulla</button>
+                <button type="submit" class="btn-primary">Crea Card</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Login modal -->
+<div id="login-modal-overlay">
+    <div id="login-modal">
+        <h2>Accedi</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" name="email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" name="password" required autocomplete="current-password">
+            </div>
+            <p id="login-error" class="auth-error"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeLoginModal()">Annulla</button>
+                <button type="submit" class="btn-primary">Accedi</button>
+            </div>
+        </form>
+        <p class="auth-switch">Non hai un account? <a href="#" onclick="closeLoginModal(); openRegisterModal(); return false;">Registrati</a></p>
+    </div>
+</div>
+
+<!-- Register modal -->
+<div id="register-modal-overlay">
+    <div id="register-modal">
+        <h2>Registrati</h2>
+        <form id="register-form">
+            <div class="form-group">
+                <label for="register-email">Email</label>
+                <input type="email" id="register-email" name="email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label for="register-password">Password <span class="hint">(min 8 caratteri)</span></label>
+                <input type="password" id="register-password" name="password" required minlength="8" autocomplete="new-password">
+            </div>
+            <p id="register-error" class="auth-error"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeRegisterModal()">Annulla</button>
+                <button type="submit" class="btn-primary">Registrati</button>
+            </div>
+        </form>
+        <p class="auth-switch">Hai già un account? <a href="#" onclick="closeRegisterModal(); openLoginModal(); return false;">Accedi</a></p>
     </div>
 </div>
 {% endblock %}
