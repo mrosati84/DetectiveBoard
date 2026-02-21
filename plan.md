@@ -54,6 +54,10 @@ Il file di image deve essere salvato nel filesystem locale sotto la directory `s
 
 Il layout della card prevede la presenza di un pin da board di sughero visibile sulla parte superiore. Questo non ha alcuna funzionalita' e' solo estetico.
 
+#### Creazione di una card
+
+Una card può essere creata tramite la toolbar, oppure facendo doppio click in una area vuota della board di sughero. In questo ultimo caso, la card deve essere creata nella posizione dove il doppio click è stato fatto.
+
 #### Posizione del pin delle card
 
 Il pin delle card puo' apparire in 3 posizioni sulla parte superiore della card:

@@ -4,6 +4,7 @@ let cards = [];        // [{id, title, description, image_path, pos_x, pos_y, el
 let connections = [];  // [{id, card_id_1, card_id_2}]
 let selectedCardIds = new Set();
 let editingCardId = null;
+let pendingCreatePos = null; // position from dblclick on empty board area
 
 // ---- Init ----
 
@@ -21,6 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target === document.getElementById('connections-svg')) {
             deselectAll();
         }
+    });
+
+    document.getElementById('board').addEventListener('dblclick', (e) => {
+        if (!currentBoardId) return;
+        const board = document.getElementById('board');
+        if (e.target !== board && e.target !== document.getElementById('connections-svg')) return;
+        const rect = board.getBoundingClientRect();
+        pendingCreatePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        openModal();
     });
 
     document.addEventListener('keydown', (e) => {
@@ -175,9 +185,14 @@ async function onCreateCard(e) {
     const form = e.target;
     const fd = new FormData(form);
 
-    // Random placement in a comfortable area of the board
-    const x = 150 + Math.random() * (window.innerWidth - 450);
-    const y = 100 + Math.random() * (window.innerHeight - 300);
+    let x, y;
+    if (pendingCreatePos) {
+        x = pendingCreatePos.x;
+        y = pendingCreatePos.y;
+    } else {
+        x = 150 + Math.random() * (window.innerWidth - 450);
+        y = 100 + Math.random() * (window.innerHeight - 300);
+    }
     fd.append('pos_x', x.toFixed(0));
     fd.append('pos_y', y.toFixed(0));
 
@@ -439,6 +454,7 @@ function openModal() {
 function closeModal() {
     document.getElementById('modal-overlay').classList.remove('open');
     document.getElementById('card-form').reset();
+    pendingCreatePos = null;
 }
 
 // ---- Edit Panel ----
