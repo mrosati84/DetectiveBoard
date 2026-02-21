@@ -84,6 +84,11 @@ def note_belongs_to_user(note_id, user_id, cur):
     return cur.fetchone() is not None
 
 
+@app.route("/health")
+def health():
+    return jsonify({"message": "OK"})
+
+
 @app.route("/assets/<path:filename>")
 def serve_assets(filename):
     return send_from_directory("assets", filename)
