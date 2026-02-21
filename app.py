@@ -15,7 +15,9 @@ load_dotenv()
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = os.path.join(app.static_folder, "uploads")
+UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or os.path.join(
+    app.static_folder, "uploads"
+)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
@@ -55,11 +57,14 @@ def require_auth(f):
         except pyjwt.InvalidTokenError:
             return jsonify({"error": "Invalid token"}), 401
         return f(*args, **kwargs)
+
     return decorated
 
 
 def board_belongs_to_user(board_id, user_id, cur):
-    cur.execute("SELECT id FROM boards WHERE id = %s AND user_id = %s", (board_id, user_id))
+    cur.execute(
+        "SELECT id FROM boards WHERE id = %s AND user_id = %s", (board_id, user_id)
+    )
     return cur.fetchone() is not None
 
 
@@ -90,6 +95,7 @@ def index():
 
 
 # ---- Auth ----
+
 
 @app.route("/api/auth/register", methods=["POST"])
 def register():
@@ -161,6 +167,7 @@ def get_me():
 
 # ---- Boards ----
 
+
 @app.route("/api/boards", methods=["GET"])
 @require_auth
 def list_boards():
@@ -201,7 +208,10 @@ def create_board():
 def get_board(board_id):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT id, name FROM boards WHERE id = %s AND user_id = %s", (board_id, request.user_id))
+    cur.execute(
+        "SELECT id, name FROM boards WHERE id = %s AND user_id = %s",
+        (board_id, request.user_id),
+    )
     board = cur.fetchone()
     if not board:
         cur.close()
@@ -230,7 +240,14 @@ def get_board(board_id):
     notes = [dict(n) for n in cur.fetchall()]
     cur.close()
     conn.close()
-    return jsonify({"board": dict(board), "cards": cards, "connections": connections, "notes": notes})
+    return jsonify(
+        {
+            "board": dict(board),
+            "cards": cards,
+            "connections": connections,
+            "notes": notes,
+        }
+    )
 
 
 @app.route("/api/boards/<int:board_id>", methods=["PATCH"])
@@ -260,7 +277,9 @@ def rename_board(board_id):
 def delete_board(board_id):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("DELETE FROM boards WHERE id = %s AND user_id = %s", (board_id, request.user_id))
+    cur.execute(
+        "DELETE FROM boards WHERE id = %s AND user_id = %s", (board_id, request.user_id)
+    )
     conn.commit()
     cur.close()
     conn.close()
@@ -268,6 +287,7 @@ def delete_board(board_id):
 
 
 # ---- Cards ----
+
 
 @app.route("/api/boards/<int:board_id>/cards", methods=["POST"])
 @require_auth
@@ -401,6 +421,7 @@ def delete_card(card_id):
 
 # ---- Notes ----
 
+
 @app.route("/api/boards/<int:board_id>/notes", methods=["POST"])
 @require_auth
 def create_note(board_id):
@@ -479,6 +500,7 @@ def delete_note(note_id):
 
 # ---- Connections ----
 
+
 @app.route("/api/connections", methods=["POST"])
 @require_auth
 def create_connection():
@@ -492,7 +514,9 @@ def create_connection():
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not card_belongs_to_user(id1, request.user_id, cur) or not card_belongs_to_user(id2, request.user_id, cur):
+    if not card_belongs_to_user(id1, request.user_id, cur) or not card_belongs_to_user(
+        id2, request.user_id, cur
+    ):
         cur.close()
         conn.close()
         return jsonify({"error": "Card not found"}), 404
@@ -526,7 +550,9 @@ def delete_connection():
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not card_belongs_to_user(id1, request.user_id, cur) or not card_belongs_to_user(id2, request.user_id, cur):
+    if not card_belongs_to_user(id1, request.user_id, cur) or not card_belongs_to_user(
+        id2, request.user_id, cur
+    ):
         cur.close()
         conn.close()
         return jsonify({"error": "Card not found"}), 404
