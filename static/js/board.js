@@ -229,20 +229,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('mouseup', onMouseUp);
     });
 
-    // Scroll wheel zoom
+    // Scroll wheel: pan (two-finger swipe) or zoom (ctrl+scroll / pinch)
     document.getElementById('board').addEventListener('wheel', (e) => {
         e.preventDefault();
-        const board = document.getElementById('board');
-        const rect = board.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        if (e.ctrlKey) {
+            const board = document.getElementById('board');
+            const rect = board.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
 
-        const factor = e.deltaY < 0 ? 1.1 : 0.9;
-        const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+            const factor = e.deltaY < 0 ? 1.1 : 0.9;
+            const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
 
-        panX = mouseX - (mouseX - panX) * (newZoom / zoom);
-        panY = mouseY - (mouseY - panY) * (newZoom / zoom);
-        zoom = newZoom;
+            panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+            panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+            zoom = newZoom;
+        } else {
+            panX -= e.deltaX;
+            panY -= e.deltaY;
+        }
         updateTransform();
     }, { passive: false });
 
