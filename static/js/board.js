@@ -797,6 +797,15 @@ async function deleteSelected() {
 
     renderConnections();
     updateToolbar();
+    closeEditPanel();
+}
+
+async function deleteEditingCard() {
+    if (!editingCardId) return;
+    selectedCardIds.clear();
+    selectedCardIds.add(editingCardId);
+    selectedNoteIds.clear();
+    await deleteSelected();
 }
 
 // ---- Notes ----

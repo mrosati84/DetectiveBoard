@@ -873,6 +873,22 @@ body {
     background: #ccc;
 }
 
+.btn-danger {
+    padding: 8px 18px;
+    background: #c0392b;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    margin-right: auto;
+}
+
+.btn-danger:hover {
+    background: #a93226;
+}
+
 /* ---- Mobile header (two-row layout) ---- */
 
 @media (max-width: 600px) {
