@@ -872,3 +872,39 @@ body {
 .btn-secondary:hover {
     background: #ccc;
 }
+
+/* ---- Mobile header (two-row layout) ---- */
+
+@media (max-width: 600px) {
+    #auth-header {
+        height: auto;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 7px 14px 8px;
+        gap: 6px;
+    }
+
+    #auth-logo {
+        text-align: center;
+        font-size: 17px;
+    }
+
+    #auth-controls {
+        justify-content: center;
+    }
+
+    #auth-email {
+        max-width: 140px;
+        font-size: 12px;
+    }
+
+    /* Buttons that sit just below the header */
+    #menu-toggle,
+    #reset-pan-btn {
+        top: 86px;
+    }
+
+    #edit-panel {
+        top: 80px;
+    }
+}
