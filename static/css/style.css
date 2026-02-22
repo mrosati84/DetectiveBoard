@@ -907,4 +907,9 @@ body {
     #edit-panel {
         top: 80px;
     }
+
+    /* Menu panel: more top padding to clear the taller header + toggle button */
+    #menu {
+        padding-top: 138px;
+    }
 }

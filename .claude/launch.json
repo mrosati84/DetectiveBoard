@@ -5,8 +5,7 @@
       "name": "detectiveboard",
       "runtimeExecutable": "uv",
       "runtimeArgs": ["run", "flask", "--app", "app", "run", "--debug", "--port", "5001"],
-      "port": 5000,
-      "autoPort": true
+      "port": 5001
     }
   ]
 }
