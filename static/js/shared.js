@@ -291,4 +291,73 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateTransform();
     }, { passive: false });
+
+    // Touch pan / pinch-zoom on the board background
+    (function () {
+        const board = document.getElementById('board');
+        let touchState = null;
+
+        board.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                touchState = {
+                    type: 'pan',
+                    startX: e.touches[0].clientX,
+                    startY: e.touches[0].clientY,
+                    startPanX: panX,
+                    startPanY: panY,
+                };
+            } else if (e.touches.length === 2) {
+                const t1 = e.touches[0], t2 = e.touches[1];
+                touchState = {
+                    type: 'pinch',
+                    startDist: Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
+                    startMidX: (t1.clientX + t2.clientX) / 2,
+                    startMidY: (t1.clientY + t2.clientY) / 2,
+                    startPanX: panX,
+                    startPanY: panY,
+                    startZoom: zoom,
+                };
+            }
+        }, { passive: false });
+
+        board.addEventListener('touchmove', (e) => {
+            if (!touchState) return;
+            e.preventDefault();
+            if (e.touches.length === 1 && touchState.type === 'pan') {
+                panX = touchState.startPanX + (e.touches[0].clientX - touchState.startX);
+                panY = touchState.startPanY + (e.touches[0].clientY - touchState.startY);
+                updateTransform();
+            } else if (e.touches.length === 2 && touchState.type === 'pinch') {
+                const t1 = e.touches[0], t2 = e.touches[1];
+                const newDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                const newMidX = (t1.clientX + t2.clientX) / 2;
+                const newMidY = (t1.clientY + t2.clientY) / 2;
+                const rect = board.getBoundingClientRect();
+                const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, touchState.startZoom * (newDist / touchState.startDist)));
+                const boardMidX = touchState.startMidX - rect.left;
+                const boardMidY = touchState.startMidY - rect.top;
+                panX = touchState.startPanX + boardMidX * (1 - newZoom / touchState.startZoom) + (newMidX - touchState.startMidX);
+                panY = touchState.startPanY + boardMidY * (1 - newZoom / touchState.startZoom) + (newMidY - touchState.startMidY);
+                zoom = newZoom;
+                updateTransform();
+            }
+        }, { passive: false });
+
+        board.addEventListener('touchend', (e) => {
+            if (!touchState) return;
+            e.preventDefault();
+            if (e.touches.length === 0) {
+                touchState = null;
+            } else if (e.touches.length === 1) {
+                touchState = {
+                    type: 'pan',
+                    startX: e.touches[0].clientX,
+                    startY: e.touches[0].clientY,
+                    startPanX: panX,
+                    startPanY: panY,
+                };
+            }
+        }, { passive: false });
+    })();
 });

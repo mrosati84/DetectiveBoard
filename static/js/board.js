@@ -251,6 +251,78 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTransform();
     }, { passive: false });
 
+    // Touch pan / pinch-zoom on the board background
+    (function () {
+        const board = document.getElementById('board');
+        let touchState = null;
+
+        board.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.card') || e.target.closest('.note')) return;
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                touchState = {
+                    type: 'pan',
+                    startX: e.touches[0].clientX,
+                    startY: e.touches[0].clientY,
+                    startPanX: panX,
+                    startPanY: panY,
+                };
+            } else if (e.touches.length === 2) {
+                const t1 = e.touches[0], t2 = e.touches[1];
+                touchState = {
+                    type: 'pinch',
+                    startDist: Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
+                    startMidX: (t1.clientX + t2.clientX) / 2,
+                    startMidY: (t1.clientY + t2.clientY) / 2,
+                    startPanX: panX,
+                    startPanY: panY,
+                    startZoom: zoom,
+                };
+            }
+        }, { passive: false });
+
+        board.addEventListener('touchmove', (e) => {
+            if (!touchState) return;
+            if (e.target.closest('.card') || e.target.closest('.note')) return;
+            e.preventDefault();
+            if (e.touches.length === 1 && touchState.type === 'pan') {
+                panX = touchState.startPanX + (e.touches[0].clientX - touchState.startX);
+                panY = touchState.startPanY + (e.touches[0].clientY - touchState.startY);
+                updateTransform();
+            } else if (e.touches.length === 2 && touchState.type === 'pinch') {
+                const t1 = e.touches[0], t2 = e.touches[1];
+                const newDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                const newMidX = (t1.clientX + t2.clientX) / 2;
+                const newMidY = (t1.clientY + t2.clientY) / 2;
+                const rect = board.getBoundingClientRect();
+                const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, touchState.startZoom * (newDist / touchState.startDist)));
+                const boardMidX = touchState.startMidX - rect.left;
+                const boardMidY = touchState.startMidY - rect.top;
+                panX = touchState.startPanX + boardMidX * (1 - newZoom / touchState.startZoom) + (newMidX - touchState.startMidX);
+                panY = touchState.startPanY + boardMidY * (1 - newZoom / touchState.startZoom) + (newMidY - touchState.startMidY);
+                zoom = newZoom;
+                updateTransform();
+            }
+        }, { passive: false });
+
+        board.addEventListener('touchend', (e) => {
+            if (!touchState) return;
+            e.preventDefault();
+            if (e.touches.length === 0) {
+                touchState = null;
+            } else if (e.touches.length === 1) {
+                // Lifted one finger during pinch — restart as single-finger pan
+                touchState = {
+                    type: 'pan',
+                    startX: e.touches[0].clientX,
+                    startY: e.touches[0].clientY,
+                    startPanX: panX,
+                    startPanY: panY,
+                };
+            }
+        }, { passive: false });
+    })();
+
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Delete' || e.key === 'Del') {
             if (selectedCardIds.size > 0 || selectedNoteIds.size > 0) {
@@ -570,6 +642,49 @@ function makeDraggable(el, card) {
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     });
+
+    el.addEventListener('touchstart', (downEvent) => {
+        if (downEvent.touches.length !== 1) return;
+        downEvent.stopPropagation();
+        downEvent.preventDefault();
+
+        const touch = downEvent.touches[0];
+        const startX = touch.clientX;
+        const startY = touch.clientY;
+        const startPosX = card.pos_x;
+        const startPosY = card.pos_y;
+        let isDragging = false;
+
+        function onTouchMove(e) {
+            e.preventDefault();
+            const t = e.touches[0];
+            const dx = t.clientX - startX;
+            const dy = t.clientY - startY;
+            if (!isDragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+                isDragging = true;
+            }
+            if (isDragging) {
+                card.pos_x = startPosX + dx / zoom;
+                card.pos_y = startPosY + dy / zoom;
+                el.style.left = card.pos_x + 'px';
+                el.style.top = card.pos_y + 'px';
+                renderConnections();
+            }
+        }
+
+        function onTouchEnd() {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            if (!isDragging) {
+                toggleSelection(card.id, false);
+            } else {
+                saveCardPosition(card);
+            }
+        }
+
+        document.addEventListener('touchmove', onTouchMove, { passive: false });
+        document.addEventListener('touchend', onTouchEnd);
+    }, { passive: false });
 }
 
 // ---- Selection ----
@@ -970,6 +1085,49 @@ function makeNoteDraggable(el, note) {
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     });
+
+    el.addEventListener('touchstart', (downEvent) => {
+        if (downEvent.touches.length !== 1) return;
+        if (downEvent.target.tagName === 'TEXTAREA') return;
+        downEvent.stopPropagation();
+        downEvent.preventDefault();
+
+        const touch = downEvent.touches[0];
+        const startX = touch.clientX;
+        const startY = touch.clientY;
+        const startPosX = note.pos_x;
+        const startPosY = note.pos_y;
+        let isDragging = false;
+
+        function onTouchMove(e) {
+            e.preventDefault();
+            const t = e.touches[0];
+            const dx = t.clientX - startX;
+            const dy = t.clientY - startY;
+            if (!isDragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+                isDragging = true;
+            }
+            if (isDragging) {
+                note.pos_x = startPosX + dx / zoom;
+                note.pos_y = startPosY + dy / zoom;
+                el.style.left = note.pos_x + 'px';
+                el.style.top = note.pos_y + 'px';
+            }
+        }
+
+        function onTouchEnd() {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            if (!isDragging) {
+                toggleNoteSelection(note.id, false);
+            } else {
+                saveNotePosition(note);
+            }
+        }
+
+        document.addEventListener('touchmove', onTouchMove, { passive: false });
+        document.addEventListener('touchend', onTouchEnd);
+    }, { passive: false });
 }
 
 // ---- Note Modal ----

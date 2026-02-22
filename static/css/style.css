@@ -22,6 +22,7 @@ body {
     background-image: url('/assets/cork_background.jpg');
     background-size: cover;
     background-position: center;
+    touch-action: none;
 }
 
 #canvas {
