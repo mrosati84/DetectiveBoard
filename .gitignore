@@ -10,3 +10,4 @@ wheels/
 .venv
 
 static/uploads/*
+.env
