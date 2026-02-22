@@ -332,6 +332,7 @@ body {
     color: #f5e6c8;
     letter-spacing: 0.04em;
     user-select: none;
+    text-decoration: none;
 }
 
 #auth-controls {

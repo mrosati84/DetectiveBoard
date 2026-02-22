@@ -11,3 +11,4 @@ wheels/
 
 static/uploads/*
 .env
+.DS_STORE

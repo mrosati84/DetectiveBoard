@@ -32,6 +32,7 @@ function onLoggedIn() {
     document.getElementById('auth-logged-in').style.display = 'flex';
     document.getElementById('menu-toggle').style.display = '';
     document.getElementById('no-board-text').textContent = 'Open the menu to load or create a board';
+    document.getElementById('auth-logo').setAttribute('href', '/board');
     loadBoards();
 }
 
@@ -46,6 +47,7 @@ function onLoggedOut() {
     document.getElementById('no-board-msg').style.display = '';
     document.getElementById('toolbar').style.display = 'none';
     document.getElementById('no-board-text').textContent = 'Log in to use DetectiveBoard';
+    document.getElementById('auth-logo').setAttribute('href', '/');
 }
 
 async function handleLogin(e) {
@@ -94,7 +96,7 @@ async function handleRegister(e) {
 
 function logout() {
     clearToken();
-    onLoggedOut();
+    window.location.href = '/';
 }
 
 function openLoginModal() {

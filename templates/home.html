@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}DetectiveBoard — Organize your investigation{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
+{% block body_class %}home-page{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<header id="auth-header">
+    <a id="auth-logo" href="/">&#128269; DetectiveBoard</a>
+    <div id="auth-controls">
+        <div id="auth-logged-out" style="display:flex;">
+            <button class="auth-btn" onclick="openRegisterModal()">Sign up</button>
+            <button class="auth-btn auth-btn-primary" onclick="openLoginModal()">Log in</button>
+        </div>
+    </div>
+</header>
+
+<!-- Hero -->
+<section id="hero">
+    <div id="hero-overlay">
+        <div id="hero-content">
+            <p id="hero-eyebrow">&#128100; Case File #001</p>
+            <h1 id="hero-title">Organize your<br>investigation</h1>
+            <p id="hero-subtitle">
+                A detective-style cork board for suspects, clues and connections.<br>
+                Pin cards. Draw red yarn. Solve the mystery.
+            </p>
+            <div id="hero-actions">
+                <button class="hero-btn hero-btn-primary" onclick="openRegisterModal()">Start investigating</button>
+                <button class="hero-btn hero-btn-ghost" onclick="openLoginModal()">Log in</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+    <div class="home-container">
+        <p class="section-eyebrow">Evidence files</p>
+        <h2 class="section-heading">Everything you need to crack the case</h2>
+        <div id="features-grid">
+
+            <article class="feature-card">
+                <div class="feature-img-wrap">
+                    <span class="feature-pin"></span>
+                    <img src="/assets/homepage/board.jpg" alt="Cork board overview with cards and connections" class="feature-img">
+                </div>
+                <div class="feature-text">
+                    <h3 class="feature-title">&#128204; The Cork Board</h3>
+                    <p class="feature-desc">Your infinite investigation surface. Drag cards anywhere, zoom for detail, pan freely. Red yarn sags under gravity — just like the real thing.</p>
+                </div>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-img-wrap">
+                    <span class="feature-pin"></span>
+                    <img src="/assets/homepage/new-card.jpg" alt="Creating a new evidence card" class="feature-img">
+                </div>
+                <div class="feature-text">
+                    <h3 class="feature-title">&#128247; Suspect Cards</h3>
+                    <p class="feature-desc">A card for every suspect, clue or lead. Add a title, notes, and a photo. Connect two cards with red yarn to map their relationship.</p>
+                </div>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-img-wrap">
+                    <span class="feature-pin"></span>
+                    <img src="/assets/homepage/edit-card.jpg" alt="Editing card evidence details" class="feature-img">
+                </div>
+                <div class="feature-text">
+                    <h3 class="feature-title">&#128203; Evidence Details</h3>
+                    <p class="feature-desc">Double-click any card to open the evidence panel. Edit title, description, image and pin position. Sticky notes for quick thoughts.</p>
+                </div>
+            </article>
+
+        </div>
+    </div>
+</section>
+
+<!-- How it works -->
+<section id="howto">
+    <div class="home-container">
+        <p class="section-eyebrow">Field Manual</p>
+        <h2 class="section-heading">How it works</h2>
+        <ol id="steps-list">
+            <li class="step-item">
+                <span class="step-num">01</span>
+                <h3 class="step-title">Sign up</h3>
+                <p class="step-desc">Create your account in seconds. No credit card, no tracking, fully local.</p>
+            </li>
+            <li class="step-sep" aria-hidden="true">&#8594;</li>
+            <li class="step-item">
+                <span class="step-num">02</span>
+                <h3 class="step-title">Open a board</h3>
+                <p class="step-desc">Create a new case board or load a saved investigation from the side menu.</p>
+            </li>
+            <li class="step-sep" aria-hidden="true">&#8594;</li>
+            <li class="step-item">
+                <span class="step-num">03</span>
+                <h3 class="step-title">Pin your evidence</h3>
+                <p class="step-desc">Add cards and sticky notes, then drag them across the cork surface to organize.</p>
+            </li>
+            <li class="step-sep" aria-hidden="true">&#8594;</li>
+            <li class="step-item">
+                <span class="step-num">04</span>
+                <h3 class="step-title">Connect the dots</h3>
+                <p class="step-desc">Select two cards and draw a red yarn connection to visualize relationships.</p>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<!-- CTA -->
+<section id="cta-section">
+    <div id="cta-overlay">
+        <div id="cta-content">
+            <p class="cta-stamp">CONFIDENTIAL</p>
+            <h2 id="cta-title">Ready to open the case?</h2>
+            <p id="cta-subtitle">Your first investigation board is one click away.</p>
+            <button class="hero-btn hero-btn-primary" onclick="openRegisterModal()">Sign up — it's free</button>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer id="home-footer">
+    <span>&#128269; DetectiveBoard</span>
+    <span>Local-only &middot; No tracking</span>
+</footer>
+
+<!-- Login modal -->
+<div id="login-modal-overlay">
+    <div id="login-modal">
+        <h2>Log in</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" name="email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" name="password" required autocomplete="current-password">
+            </div>
+            <p id="login-error" class="auth-error"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeLoginModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Log in</button>
+            </div>
+        </form>
+        <p class="auth-switch">Don't have an account? <a href="#" onclick="closeLoginModal(); openRegisterModal(); return false;">Sign up</a></p>
+    </div>
+</div>
+
+<!-- Register modal -->
+<div id="register-modal-overlay">
+    <div id="register-modal">
+        <h2>Sign up</h2>
+        <form id="register-form">
+            <div class="form-group">
+                <label for="register-email">Email</label>
+                <input type="email" id="register-email" name="email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label for="register-password">Password <span class="hint">(min 8 characters)</span></label>
+                <input type="password" id="register-password" name="password" required minlength="8" autocomplete="new-password">
+            </div>
+            <p id="register-error" class="auth-error"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeRegisterModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Sign up</button>
+            </div>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="#" onclick="closeRegisterModal(); openLoginModal(); return false;">Log in</a></p>
+    </div>
+</div>
+{% endblock %}

@@ -95,7 +95,12 @@ def serve_assets(filename):
 
 
 @app.route("/")
-def index():
+def home():
+    return render_template("home.html")
+
+
+@app.route("/board")
+def board():
     return render_template("index.html")
 
 
