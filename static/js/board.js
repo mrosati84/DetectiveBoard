@@ -447,6 +447,7 @@ function clearBoard() {
     currentBoardShareToken = null;
     updateToolbar();
     document.getElementById('share-btn').style.display = 'none';
+    updateShareBanner();
 }
 
 // ---- Card creation ----
@@ -1121,11 +1122,40 @@ function updateShareButton() {
         btn.textContent = '🔗 Share';
         btn.classList.remove('share-btn-active');
     }
+    updateShareBanner();
+}
+
+function updateShareBanner() {
+    const banner = document.getElementById('share-url-banner');
+    if (currentBoardShareToken) {
+        const shareUrl = window.location.origin + '/share/' + currentBoardShareToken;
+        document.getElementById('share-banner-input').value = shareUrl;
+        document.getElementById('share-banner-copy-btn').textContent = 'Copy';
+        banner.style.display = 'flex';
+        document.body.classList.add('has-share-banner');
+    } else {
+        banner.style.display = 'none';
+        document.body.classList.remove('has-share-banner');
+    }
+}
+
+async function copyShareBannerUrl() {
+    const input = document.getElementById('share-banner-input');
+    try {
+        await navigator.clipboard.writeText(input.value);
+    } catch {
+        input.select();
+        document.execCommand('copy');
+    }
+    const btn = document.getElementById('share-banner-copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
 }
 
 async function onShareToggle() {
     if (!currentBoardId) return;
     if (currentBoardShareToken) {
+        if (!confirm('Stop sharing this board?\nThe share link will stop working.')) return;
         const res = await fetch(`/api/boards/${currentBoardId}/share`, {
             method: 'DELETE',
             headers: authHeaders(),
