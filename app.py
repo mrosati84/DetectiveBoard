@@ -1,4 +1,5 @@
 import os
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -102,6 +103,19 @@ def home():
 @app.route("/board")
 def board():
     return render_template("index.html")
+
+
+@app.route("/share/<token>")
+def share_board(token):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM boards WHERE share_token = %s", (token,))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not row:
+        return render_template("404.html"), 404
+    return render_template("shared.html", token=token)
 
 
 # ---- Auth ----
@@ -219,7 +233,7 @@ def get_board(board_id):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(
-        "SELECT id, name FROM boards WHERE id = %s AND user_id = %s",
+        "SELECT id, name, share_token FROM boards WHERE id = %s AND user_id = %s",
         (board_id, request.user_id),
     )
     board = cur.fetchone()
@@ -575,3 +589,90 @@ def delete_connection():
     cur.close()
     conn.close()
     return jsonify({"success": True})
+
+
+# ---- Share ----
+
+
+@app.route("/api/boards/<int:board_id>/share", methods=["POST"])
+@require_auth
+def enable_share(board_id):
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    if not board_belongs_to_user(board_id, request.user_id, cur):
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Board not found"}), 404
+    token = secrets.token_urlsafe(24)
+    cur.execute(
+        "UPDATE boards SET share_token = %s WHERE id = %s RETURNING share_token",
+        (token, board_id),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"share_token": token, "share_url": f"/share/{token}"})
+
+
+@app.route("/api/boards/<int:board_id>/share", methods=["DELETE"])
+@require_auth
+def disable_share(board_id):
+    conn = get_db()
+    cur = conn.cursor()
+    if not board_belongs_to_user(board_id, request.user_id, cur):
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Board not found"}), 404
+    cur.execute(
+        "UPDATE boards SET share_token = NULL WHERE id = %s", (board_id,)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/share/<token>", methods=["GET"])
+def get_shared_board(token):
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        "SELECT id, name FROM boards WHERE share_token = %s", (token,)
+    )
+    board = cur.fetchone()
+    if not board:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Board not found"}), 404
+    board_id = board["id"]
+    cur.execute(
+        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position FROM cards WHERE board_id = %s",
+        (board_id,),
+    )
+    cards = [dict(c) for c in cur.fetchall()]
+    cur.execute(
+        """
+        SELECT cn.id, cn.card_id_1, cn.card_id_2
+        FROM connections cn
+        JOIN cards c1 ON c1.id = cn.card_id_1
+        JOIN cards c2 ON c2.id = cn.card_id_2
+        WHERE c1.board_id = %s AND c2.board_id = %s
+        """,
+        (board_id, board_id),
+    )
+    connections = [dict(c) for c in cur.fetchall()]
+    cur.execute(
+        "SELECT id, content, pos_x, pos_y FROM notes WHERE board_id = %s",
+        (board_id,),
+    )
+    notes = [dict(n) for n in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(
+        {
+            "board": dict(board),
+            "cards": cards,
+            "connections": connections,
+            "notes": notes,
+        }
+    )

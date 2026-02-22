@@ -50,6 +50,7 @@
     <button id="add-note-btn" class="toolbar-btn" onclick="openNoteModal()">&#128203; Note</button>
     <button id="connect-btn" class="toolbar-btn" onclick="connectCards()">&#128279; Connect</button>
     <button id="disconnect-btn" class="toolbar-btn" onclick="disconnectCards()">&#9986; Disconnect</button>
+    <button id="share-btn" class="toolbar-btn" onclick="onShareToggle()" style="display:none;">&#128279; Share</button>
     <button id="help-btn" class="toolbar-btn" onclick="openHelpModal()" title="Help">? Help</button>
 </div>
 
@@ -176,6 +177,21 @@
             </div>
         </form>
         <p class="auth-switch">Already have an account? <a href="#" onclick="closeRegisterModal(); openLoginModal(); return false;">Log in</a></p>
+    </div>
+</div>
+
+<!-- Share modal -->
+<div id="share-modal-overlay">
+    <div id="share-modal">
+        <div id="share-modal-header">
+            <h2>&#128279; Share Board</h2>
+            <button id="share-modal-close" onclick="closeShareModal()" title="Close">&times;</button>
+        </div>
+        <p id="share-modal-desc">Anyone with this link can view the board (read-only).</p>
+        <div id="share-url-row">
+            <input type="text" id="share-url-input" readonly>
+            <button id="share-copy-btn" onclick="copyShareUrl()">Copy</button>
+        </div>
     </div>
 </div>
 

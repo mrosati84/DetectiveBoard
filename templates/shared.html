@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}DetectiveBoard — Shared Board{% endblock %}
+
+{% block content %}
+<!-- Auth header (read-only) -->
+<header id="auth-header">
+    <a id="auth-logo" href="/">&#128269; DetectiveBoard</a>
+    <div id="auth-controls">
+        <span id="shared-badge">&#128279; View only</span>
+        <div id="auth-logged-out">
+            <button class="auth-btn" onclick="openRegisterModal()">Sign up</button>
+            <button class="auth-btn auth-btn-primary" onclick="openLoginModal()">Log in</button>
+        </div>
+        <div id="auth-logged-in" style="display:none;">
+            <span id="auth-email"></span>
+            <button class="auth-btn" onclick="window.location.href='/board'">My boards</button>
+        </div>
+    </div>
+</header>
+
+<!-- Cork board -->
+<div id="board">
+    <div id="canvas">
+        <svg id="connections-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div id="no-board-msg" style="display:none;"></div>
+</div>
+
+<!-- Reset pan button -->
+<button id="reset-pan-btn" onclick="resetPan()" title="Reset pan" style="display:none;">&#8982; Reset Pan</button>
+
+<!-- Login modal -->
+<div id="login-modal-overlay">
+    <div id="login-modal">
+        <h2>Log in</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" name="email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" name="password" required autocomplete="current-password">
+            </div>
+            <p id="login-error" class="auth-error"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeLoginModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Log in</button>
+            </div>
+        </form>
+        <p class="auth-switch">Don't have an account? <a href="#" onclick="closeLoginModal(); openRegisterModal(); return false;">Sign up</a></p>
+    </div>
+</div>
+
+<!-- Register modal -->
+<div id="register-modal-overlay">
+    <div id="register-modal">
+        <h2>Sign up</h2>
+        <form id="register-form">
+            <div class="form-group">
+                <label for="register-email">Email</label>
+                <input type="email" id="register-email" name="email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label for="register-password">Password <span class="hint">(min 8 characters)</span></label>
+                <input type="password" id="register-password" name="password" required minlength="8" autocomplete="new-password">
+            </div>
+            <p id="register-error" class="auth-error"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeRegisterModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Sign up</button>
+            </div>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="#" onclick="closeRegisterModal(); openLoginModal(); return false;">Log in</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.SHARE_TOKEN = {{ token | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/shared.js') }}"></script>
+{% endblock %}

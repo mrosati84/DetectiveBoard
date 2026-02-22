@@ -131,6 +131,7 @@ function handleUnauthorized() {
 
 // ---- Board state ----
 let currentBoardId = null;
+let currentBoardShareToken = null; // null = not shared
 let cards = [];        // [{id, title, description, image_path, pos_x, pos_y, el}]
 let notes = [];        // [{id, content, pos_x, pos_y, el}]
 let connections = [];  // [{id, card_id_1, card_id_2}]
@@ -173,6 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('help-modal-overlay').addEventListener('click', (e) => {
         if (e.target === document.getElementById('help-modal-overlay')) closeHelpModal();
+    });
+    document.getElementById('share-modal-overlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('share-modal-overlay')) closeShareModal();
     });
 
     document.getElementById('board').addEventListener('click', () => {
@@ -256,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeLoginModal();
             closeRegisterModal();
             closeHelpModal();
+            closeShareModal();
         }
     });
 });
@@ -416,6 +421,7 @@ async function loadBoard(boardId) {
 
     currentBoardId = boardId;
     clearBoard();
+    currentBoardShareToken = data.board.share_token || null;
 
     connections = data.connections;
     data.cards.forEach(card => addCard(card));
@@ -424,6 +430,7 @@ async function loadBoard(boardId) {
 
     document.getElementById('no-board-msg').style.display = 'none';
     document.getElementById('toolbar').style.display = '';
+    updateShareButton();
 
     loadBoards();
 }
@@ -437,7 +444,9 @@ function clearBoard() {
     cards = [];
     notes = [];
     connections = [];
+    currentBoardShareToken = null;
     updateToolbar();
+    document.getElementById('share-btn').style.display = 'none';
 }
 
 // ---- Card creation ----
@@ -1098,6 +1107,70 @@ function updateCardElement(card) {
         ${card.description ? `<div class="card-description">${escHtml(card.description)}</div>` : ''}
         ${card.image_path ? `<img src="${card.image_path}" class="card-image" alt="">` : ''}
     `;
+}
+
+// ---- Share ----
+
+function updateShareButton() {
+    const btn = document.getElementById('share-btn');
+    btn.style.display = currentBoardId ? 'inline-block' : 'none';
+    if (currentBoardShareToken) {
+        btn.textContent = '⛔ Stop sharing';
+        btn.classList.add('share-btn-active');
+    } else {
+        btn.textContent = '🔗 Share';
+        btn.classList.remove('share-btn-active');
+    }
+}
+
+async function onShareToggle() {
+    if (!currentBoardId) return;
+    if (currentBoardShareToken) {
+        const res = await fetch(`/api/boards/${currentBoardId}/share`, {
+            method: 'DELETE',
+            headers: authHeaders(),
+        });
+        if (res.status === 401) { handleUnauthorized(); return; }
+        if (res.ok) {
+            currentBoardShareToken = null;
+            updateShareButton();
+        }
+    } else {
+        const res = await fetch(`/api/boards/${currentBoardId}/share`, {
+            method: 'POST',
+            headers: authHeaders(),
+        });
+        if (res.status === 401) { handleUnauthorized(); return; }
+        if (res.ok) {
+            const data = await res.json();
+            currentBoardShareToken = data.share_token;
+            updateShareButton();
+            openShareModal(window.location.origin + data.share_url);
+        }
+    }
+}
+
+function openShareModal(shareUrl) {
+    document.getElementById('share-url-input').value = shareUrl;
+    document.getElementById('share-copy-btn').textContent = 'Copy';
+    document.getElementById('share-modal-overlay').classList.add('open');
+}
+
+function closeShareModal() {
+    document.getElementById('share-modal-overlay').classList.remove('open');
+}
+
+async function copyShareUrl() {
+    const input = document.getElementById('share-url-input');
+    try {
+        await navigator.clipboard.writeText(input.value);
+    } catch {
+        input.select();
+        document.execCommand('copy');
+    }
+    const btn = document.getElementById('share-copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
 }
 
 // ---- Help Modal ----
