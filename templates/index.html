@@ -50,6 +50,7 @@
     <button id="add-note-btn" class="toolbar-btn" onclick="openNoteModal()">&#128203; Note</button>
     <button id="connect-btn" class="toolbar-btn" onclick="connectCards()">&#128279; Connect</button>
     <button id="disconnect-btn" class="toolbar-btn" onclick="disconnectCards()">&#9986; Disconnect</button>
+    <button id="help-btn" class="toolbar-btn" onclick="openHelpModal()" title="Help">? Help</button>
 </div>
 
 <!-- Card edit panel (right side) -->
@@ -175,6 +176,61 @@
             </div>
         </form>
         <p class="auth-switch">Already have an account? <a href="#" onclick="closeRegisterModal(); openLoginModal(); return false;">Log in</a></p>
+    </div>
+</div>
+
+<!-- Help modal -->
+<div id="help-modal-overlay">
+    <div id="help-modal">
+        <div id="help-modal-header">
+            <h2>&#128218; How to use DetectiveBoard</h2>
+            <button id="help-modal-close" onclick="closeHelpModal()" title="Close">&times;</button>
+        </div>
+        <div id="help-modal-body">
+            <section class="help-section">
+                <h3>&#128247; Board navigation</h3>
+                <ul>
+                    <li><strong>Zoom:</strong> scroll the mouse wheel over the board</li>
+                    <li><strong>Pan:</strong> hold the middle mouse button and drag</li>
+                    <li><strong>Reset view:</strong> click the <em>Reset Pan</em> button in the top-right corner</li>
+                </ul>
+            </section>
+            <section class="help-section">
+                <h3>&#128204; Cards</h3>
+                <ul>
+                    <li><strong>Create:</strong> click <em>+ Card</em> in the toolbar, or double-click an empty spot on the board</li>
+                    <li><strong>Move:</strong> drag the card to the desired position</li>
+                    <li><strong>Select:</strong> click a card; hold <kbd>Shift</kbd> to add to the selection</li>
+                    <li><strong>Edit:</strong> double-click a card — a side panel opens where you can change the title, description, image and pin position</li>
+                    <li><strong>Delete (from panel):</strong> double-click the card, then click the <em>Delete</em> button in the side panel</li>
+                    <li><strong>Delete (keyboard):</strong> select one or more cards, then press <kbd>Del</kbd></li>
+                </ul>
+            </section>
+            <section class="help-section">
+                <h3>&#128203; Notes</h3>
+                <ul>
+                    <li><strong>Create:</strong> click <em>&#128203; Note</em> in the toolbar</li>
+                    <li><strong>Move:</strong> drag the note to the desired position</li>
+                    <li><strong>Edit:</strong> double-click a note to edit its text directly</li>
+                    <li><strong>Delete:</strong> click the note to select it, then press <kbd>Del</kbd></li>
+                </ul>
+            </section>
+            <section class="help-section">
+                <h3>&#129513; Connections (red yarn)</h3>
+                <ul>
+                    <li><strong>Connect:</strong> select two cards holding <kbd>Shift</kbd>, then click <em>&#128279; Connect</em> in the toolbar</li>
+                    <li><strong>Disconnect:</strong> select two already-connected cards holding <kbd>Shift</kbd>, then click <em>&#9986; Disconnect</em></li>
+                </ul>
+            </section>
+            <section class="help-section">
+                <h3>&#9000; Keyboard shortcuts</h3>
+                <ul>
+                    <li><kbd>Del</kbd> — delete the selected cards or notes</li>
+                    <li><kbd>Esc</kbd> — close any open panel or modal</li>
+                    <li><kbd>Shift</kbd> + click — multi-select cards and notes</li>
+                </ul>
+            </section>
+        </div>
     </div>
 </div>
 {% endblock %}

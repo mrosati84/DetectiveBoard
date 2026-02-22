@@ -169,6 +169,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('register-modal-overlay').addEventListener('click', (e) => {
         if (e.target === document.getElementById('register-modal-overlay')) closeRegisterModal();
     });
+    document.getElementById('help-modal-overlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('help-modal-overlay')) closeHelpModal();
+    });
 
     document.getElementById('board').addEventListener('click', () => {
         closeMenu();
@@ -250,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeEditPanel();
             closeLoginModal();
             closeRegisterModal();
+            closeHelpModal();
         }
     });
 });
@@ -1092,6 +1096,16 @@ function updateCardElement(card) {
         ${card.description ? `<div class="card-description">${escHtml(card.description)}</div>` : ''}
         ${card.image_path ? `<img src="${card.image_path}" class="card-image" alt="">` : ''}
     `;
+}
+
+// ---- Help Modal ----
+
+function openHelpModal() {
+    document.getElementById('help-modal-overlay').classList.add('open');
+}
+
+function closeHelpModal() {
+    document.getElementById('help-modal-overlay').classList.remove('open');
 }
 
 // ---- Utilities ----
