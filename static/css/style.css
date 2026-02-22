@@ -699,7 +699,7 @@ body {
 
 #edit-panel {
     position: fixed;
-    top: 68px;
+    top: 105px;
     right: -420px;
     width: 340px;
     max-width: calc(100vw - 40px);
@@ -709,7 +709,7 @@ body {
     box-shadow: -3px 4px 24px rgba(0, 0, 0, 0.4);
     z-index: 250;
     transition: right 0.28s ease;
-    max-height: calc(100vh - 88px);
+    max-height: calc(100vh - 125px);
     overflow-y: auto;
 }
 
@@ -905,7 +905,7 @@ body {
     }
 
     #edit-panel {
-        top: 80px;
+        top: 130px;
     }
 
     /* Menu panel: more top padding to clear the taller header + toggle button */
