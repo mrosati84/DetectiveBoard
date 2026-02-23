@@ -24,6 +24,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 TOKEN_EXPIRY_DAYS = 30
 
+ALLOWED_CARD_COLORS = {"#f5e6c8", "#f5d0c8", "#d5e8d0", "#2a1e14"}
+
 
 def get_db():
     return psycopg2.connect(
@@ -242,7 +244,7 @@ def get_board(board_id):
         conn.close()
         return jsonify({"error": "Board not found"}), 404
     cur.execute(
-        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position, inactive FROM cards WHERE board_id = %s",
+        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color FROM cards WHERE board_id = %s",
         (board_id,),
     )
     cards = [dict(c) for c in cur.fetchall()]
@@ -331,6 +333,9 @@ def create_card(board_id):
     if pin_position not in ("left", "center", "right"):
         pin_position = "center"
     inactive = request.form.get("inactive") == "true"
+    color = request.form.get("color") or None
+    if color and color not in ALLOWED_CARD_COLORS:
+        color = None
 
     if not title:
         cur.close()
@@ -352,11 +357,11 @@ def create_card(board_id):
 
     cur.execute(
         """
-        INSERT INTO cards (board_id, title, description, image_path, pos_x, pos_y, pin_position, inactive)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive
+        INSERT INTO cards (board_id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color
         """,
-        (board_id, title, description, image_path, pos_x, pos_y, pin_position, inactive),
+        (board_id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color),
     )
     card = dict(cur.fetchone())
     conn.commit()
@@ -391,6 +396,11 @@ def update_card(card_id):
             values.append(pin_position)
         fields.append("inactive = %s")
         values.append(request.form.get("inactive") == "true")
+        color = request.form.get("color") or None
+        if color and color not in ALLOWED_CARD_COLORS:
+            color = None
+        fields.append("color = %s")
+        values.append(color)
         if "image" in request.files:
             file = request.files["image"]
             if file and file.filename:
@@ -408,7 +418,7 @@ def update_card(card_id):
         data = request.get_json()
         fields = []
         values = []
-        for field in ("pos_x", "pos_y", "title", "description"):
+        for field in ("pos_x", "pos_y", "title", "description", "color"):
             if field in data:
                 fields.append(f"{field} = %s")
                 values.append(data[field])
@@ -420,7 +430,7 @@ def update_card(card_id):
 
     cur.execute(
         f"UPDATE cards SET {', '.join(fields)} WHERE id = %s "
-        "RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive",
+        "RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color",
         values,
     )
     card = cur.fetchone()
@@ -649,7 +659,7 @@ def get_shared_board(token):
         return jsonify({"error": "Board not found"}), 404
     board_id = board["id"]
     cur.execute(
-        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position, inactive FROM cards WHERE board_id = %s",
+        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color FROM cards WHERE board_id = %s",
         (board_id,),
     )
     cards = [dict(c) for c in cur.fetchall()]

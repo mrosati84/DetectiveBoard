@@ -1,3 +1,16 @@
+// ---- Card colors ----
+const CARD_COLORS = [
+    { value: '',        bg: '#fffef0', dark: false, label: 'Bianco' },
+    { value: '#f5e6c8', bg: '#f5e6c8', dark: false, label: 'Manila' },
+    { value: '#f5d0c8', bg: '#f5d0c8', dark: false, label: 'Rosa'   },
+    { value: '#d5e8d0', bg: '#d5e8d0', dark: false, label: 'Verde'  },
+    { value: '#2a1e14', bg: '#2a1e14', dark: true,  label: 'Scuro'  },
+];
+
+function getColorEntry(color) {
+    return CARD_COLORS.find(c => c.value === (color || '')) || CARD_COLORS[0];
+}
+
 // ---- Auth state ----
 const TOKEN_KEY = 'db_token';
 let currentUser = null; // { id, email }
@@ -159,6 +172,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('card-form').addEventListener('submit', onCreateCard);
     document.getElementById('note-form').addEventListener('submit', onCreateNote);
     document.getElementById('edit-card-form').addEventListener('submit', onSaveEditCard);
+
+    document.querySelectorAll('#modal-color-picker .color-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+            document.querySelectorAll('#modal-color-picker .color-dot').forEach(d => d.classList.remove('color-dot-selected'));
+            dot.classList.add('color-dot-selected');
+            document.getElementById('modal-card-color').value = dot.dataset.color;
+        });
+    });
+
+    document.querySelectorAll('#edit-color-picker .color-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+            document.querySelectorAll('#edit-color-picker .color-dot').forEach(d => d.classList.remove('color-dot-selected'));
+            dot.classList.add('color-dot-selected');
+            document.getElementById('edit-card-color').value = dot.dataset.color;
+        });
+    });
 
     document.getElementById('modal-overlay').addEventListener('click', (e) => {
         if (e.target === document.getElementById('modal-overlay')) closeModal();
@@ -545,9 +574,20 @@ function createCardElement(card) {
     el.style.top = card.pos_y + 'px';
     el.dataset.id = card.id;
 
+    const colorEntry = getColorEntry(card.color);
+    el.style.background = colorEntry.bg;
+    if (colorEntry.dark) el.classList.add('card-dark');
+
     const pinPos = card.pin_position || 'center';
+    const colorDotsHtml = CARD_COLORS.map(c => {
+        const isActive = (card.color || '') === c.value;
+        const extraStyle = c.value === '' ? 'box-shadow:inset 0 0 0 1px #c0a888;' : '';
+        return `<span class="card-color-dot${isActive ? ' active' : ''}" data-color="${c.value}" style="background:${c.bg};${extraStyle}" title="${c.label}"></span>`;
+    }).join('');
+
     el.innerHTML = `
         <div class="card-pin pin-${pinPos}"></div>
+        <div class="card-colors">${colorDotsHtml}</div>
         <div class="card-content">
             <div class="card-title">${escHtml(card.title)}</div>
             ${card.description ? `<div class="card-description">${escHtml(card.description)}</div>` : ''}
@@ -560,8 +600,33 @@ function createCardElement(card) {
         openEditPanel(card);
     });
 
+    el.querySelectorAll('.card-color-dot').forEach(dot => {
+        dot.addEventListener('mousedown', e => e.stopPropagation());
+        dot.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const newColor = dot.dataset.color;
+            if ((card.color || '') === newColor) return;
+            card.color = newColor || null;
+            applyCardColor(card);
+            await fetch(`/api/cards/${card.id}`, {
+                method: 'PUT',
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ color: card.color }),
+            });
+        });
+    });
+
     makeDraggable(el, card);
     return el;
+}
+
+function applyCardColor(card) {
+    const colorEntry = getColorEntry(card.color);
+    card.el.style.background = colorEntry.bg;
+    card.el.classList.toggle('card-dark', colorEntry.dark);
+    card.el.querySelectorAll('.card-color-dot').forEach(dot => {
+        dot.classList.toggle('active', dot.dataset.color === (card.color || ''));
+    });
 }
 
 async function onCreateCard(e) {
@@ -1199,6 +1264,9 @@ function openModal() {
 function closeModal() {
     document.getElementById('modal-overlay').classList.remove('open');
     document.getElementById('card-form').reset();
+    document.querySelectorAll('#modal-color-picker .color-dot').forEach(d => d.classList.remove('color-dot-selected'));
+    document.querySelector('#modal-color-picker .color-dot[data-color=""]').classList.add('color-dot-selected');
+    document.getElementById('modal-card-color').value = '';
     pendingCreatePos = null;
 }
 
@@ -1226,6 +1294,12 @@ function openEditPanel(card) {
     });
 
     document.getElementById('edit-card-inactive').checked = !!card.inactive;
+
+    const cardColor = card.color || '';
+    document.querySelectorAll('#edit-color-picker .color-dot').forEach(dot => {
+        dot.classList.toggle('color-dot-selected', dot.dataset.color === cardColor);
+    });
+    document.getElementById('edit-card-color').value = cardColor;
 
     document.getElementById('edit-panel').classList.add('open');
     setTimeout(() => document.getElementById('edit-card-title').focus(), 50);
@@ -1258,6 +1332,7 @@ async function onSaveEditCard(e) {
             card.image_path = updated.image_path;
             card.pin_position = updated.pin_position;
             card.inactive = updated.inactive;
+            card.color = updated.color || null;
             updateCardElement(card);
             renderConnections();
         }
@@ -1270,6 +1345,8 @@ function updateCardElement(card) {
     pinEl.className = `card-pin pin-${card.pin_position || 'center'}`;
 
     card.el.classList.toggle('card-inactive', !!card.inactive);
+
+    applyCardColor(card);
 
     const content = card.el.querySelector('.card-content');
     content.innerHTML = `

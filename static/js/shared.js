@@ -121,6 +121,14 @@ function escHtml(str) {
     return div.innerHTML;
 }
 
+const CARD_COLORS_SHARED = [
+    { value: '',        bg: '#fffef0', dark: false },
+    { value: '#f5e6c8', bg: '#f5e6c8', dark: false },
+    { value: '#f5d0c8', bg: '#f5d0c8', dark: false },
+    { value: '#d5e8d0', bg: '#d5e8d0', dark: false },
+    { value: '#2a1e14', bg: '#2a1e14', dark: true  },
+];
+
 function renderCards(cardsData) {
     const canvas = document.getElementById('canvas');
     cardsData.forEach(card => {
@@ -130,6 +138,9 @@ function renderCards(cardsData) {
         el.style.left = card.pos_x + 'px';
         el.style.top = card.pos_y + 'px';
         const pinPos = card.pin_position || 'center';
+        const colorEntry = CARD_COLORS_SHARED.find(c => c.value === (card.color || '')) || CARD_COLORS_SHARED[0];
+        el.style.background = colorEntry.bg;
+        if (colorEntry.dark) el.classList.add('card-dark');
         el.innerHTML = `
             <div class="card-pin pin-${pinPos}"></div>
             <div class="card-content">

@@ -97,6 +97,17 @@
                 Inactive
             </label>
         </div>
+        <div class="form-group">
+            <label>Color</label>
+            <div class="color-picker" id="edit-color-picker">
+                <button type="button" class="color-dot color-dot-selected" data-color="" style="background:#fffef0;box-shadow:inset 0 0 0 1px #c0a888;" title="Bianco"></button>
+                <button type="button" class="color-dot" data-color="#f5e6c8" style="background:#f5e6c8;" title="Manila"></button>
+                <button type="button" class="color-dot" data-color="#f5d0c8" style="background:#f5d0c8;" title="Rosa"></button>
+                <button type="button" class="color-dot" data-color="#d5e8d0" style="background:#d5e8d0;" title="Verde"></button>
+                <button type="button" class="color-dot" data-color="#2a1e14" style="background:#2a1e14;" title="Scuro"></button>
+            </div>
+            <input type="hidden" name="color" id="edit-card-color" value="">
+        </div>
         <div class="modal-actions">
             <button type="button" class="btn-danger" onclick="deleteEditingCard()">Delete</button>
             <button type="button" class="btn-secondary" onclick="closeEditPanel()">Cancel</button>
@@ -138,6 +149,17 @@
             <div class="form-group">
                 <label for="card-image">Image <span class="hint">(jpg/png, max 1MB)</span></label>
                 <input type="file" id="card-image" name="image" accept=".jpg,.jpeg,.png">
+            </div>
+            <div class="form-group">
+                <label>Color</label>
+                <div class="color-picker" id="modal-color-picker">
+                    <button type="button" class="color-dot color-dot-selected" data-color="" style="background:#fffef0;box-shadow:inset 0 0 0 1px #c0a888;" title="Bianco"></button>
+                    <button type="button" class="color-dot" data-color="#f5e6c8" style="background:#f5e6c8;" title="Manila"></button>
+                    <button type="button" class="color-dot" data-color="#f5d0c8" style="background:#f5d0c8;" title="Rosa"></button>
+                    <button type="button" class="color-dot" data-color="#d5e8d0" style="background:#d5e8d0;" title="Verde"></button>
+                    <button type="button" class="color-dot" data-color="#2a1e14" style="background:#2a1e14;" title="Scuro"></button>
+                </div>
+                <input type="hidden" name="color" id="modal-card-color" value="">
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
