@@ -714,6 +714,16 @@ body {
     background: #606060;
 }
 
+#edit-selected-btn {
+    background: #1a4a6a;
+    color: #c8e0ff;
+    display: none;
+}
+
+#edit-selected-btn:hover {
+    background: #215f8a;
+}
+
 #delete-selected-btn {
     background: #7a1a1a;
     color: #ffd0c8;

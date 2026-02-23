@@ -841,9 +841,12 @@ function updateToolbar() {
     const connectBtn = document.getElementById('connect-btn');
     const disconnectBtn = document.getElementById('disconnect-btn');
     const deleteBtn = document.getElementById('delete-selected-btn');
+    const editBtn = document.getElementById('edit-selected-btn');
 
     const hasSelection = selectedCardIds.size > 0 || selectedNoteIds.size > 0;
     deleteBtn.style.display = hasSelection ? 'inline-block' : 'none';
+
+    editBtn.style.display = (selectedCardIds.size === 1 && selectedNoteIds.size === 0) ? 'inline-block' : 'none';
 
     if (selectedCardIds.size === 2 && selectedNoteIds.size === 0) {
         const [id1, id2] = [...selectedCardIds];
@@ -858,6 +861,13 @@ function updateToolbar() {
         connectBtn.style.display = 'none';
         disconnectBtn.style.display = 'none';
     }
+}
+
+function editSelectedCard() {
+    if (selectedCardIds.size !== 1 || selectedNoteIds.size !== 0) return;
+    const [id] = [...selectedCardIds];
+    const card = cards.find(c => c.id === id);
+    if (card) openEditPanel(card);
 }
 
 // ---- Connections ----
