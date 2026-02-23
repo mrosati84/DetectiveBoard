@@ -918,6 +918,8 @@ async function disconnectCards() {
 function renderConnections() {
     const svg = document.getElementById('connections-svg');
     svg.innerHTML = '';
+    // Re-append SVG to canvas so it's always the last child (painted on top of all cards).
+    document.getElementById('canvas').appendChild(svg);
 
     const CARD_WIDTH = 210;
     const PIN_Y_OFFSET = 4;
