@@ -116,6 +116,11 @@ body {
     box-shadow: 0 0 0 3px #cc2200, 2px 3px 10px rgba(0, 0, 0, 0.45);
 }
 
+.card.card-inactive {
+    opacity: 0.4;
+    filter: saturate(0.3);
+}
+
 .card-pin {
     position: absolute;
     top: -10px;
@@ -163,6 +168,18 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
+    font-size: 13px;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #3a2000;
+    cursor: pointer;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
     font-size: 13px;
     font-weight: normal;
     text-transform: none;

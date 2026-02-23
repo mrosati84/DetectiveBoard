@@ -126,6 +126,7 @@ function renderCards(cardsData) {
     cardsData.forEach(card => {
         const el = document.createElement('div');
         el.className = 'card card-readonly';
+        if (card.inactive) el.classList.add('card-inactive');
         el.style.left = card.pos_x + 'px';
         el.style.top = card.pos_y + 'px';
         const pinPos = card.pin_position || 'center';

@@ -242,7 +242,7 @@ def get_board(board_id):
         conn.close()
         return jsonify({"error": "Board not found"}), 404
     cur.execute(
-        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position FROM cards WHERE board_id = %s",
+        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position, inactive FROM cards WHERE board_id = %s",
         (board_id,),
     )
     cards = [dict(c) for c in cur.fetchall()]
@@ -330,6 +330,7 @@ def create_card(board_id):
     pin_position = request.form.get("pin_position", "center")
     if pin_position not in ("left", "center", "right"):
         pin_position = "center"
+    inactive = request.form.get("inactive") == "true"
 
     if not title:
         cur.close()
@@ -351,11 +352,11 @@ def create_card(board_id):
 
     cur.execute(
         """
-        INSERT INTO cards (board_id, title, description, image_path, pos_x, pos_y, pin_position)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        RETURNING id, title, description, image_path, pos_x, pos_y, pin_position
+        INSERT INTO cards (board_id, title, description, image_path, pos_x, pos_y, pin_position, inactive)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive
         """,
-        (board_id, title, description, image_path, pos_x, pos_y, pin_position),
+        (board_id, title, description, image_path, pos_x, pos_y, pin_position, inactive),
     )
     card = dict(cur.fetchone())
     conn.commit()
@@ -388,6 +389,8 @@ def update_card(card_id):
         if pin_position in ("left", "center", "right"):
             fields.append("pin_position = %s")
             values.append(pin_position)
+        fields.append("inactive = %s")
+        values.append(request.form.get("inactive") == "true")
         if "image" in request.files:
             file = request.files["image"]
             if file and file.filename:
@@ -417,7 +420,7 @@ def update_card(card_id):
 
     cur.execute(
         f"UPDATE cards SET {', '.join(fields)} WHERE id = %s "
-        "RETURNING id, title, description, image_path, pos_x, pos_y, pin_position",
+        "RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive",
         values,
     )
     card = cur.fetchone()
@@ -646,7 +649,7 @@ def get_shared_board(token):
         return jsonify({"error": "Board not found"}), 404
     board_id = board["id"]
     cur.execute(
-        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position FROM cards WHERE board_id = %s",
+        "SELECT id, title, description, image_path, pos_x, pos_y, pin_position, inactive FROM cards WHERE board_id = %s",
         (board_id,),
     )
     cards = [dict(c) for c in cur.fetchall()]

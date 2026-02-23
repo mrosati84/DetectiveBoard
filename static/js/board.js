@@ -540,6 +540,7 @@ function addCard(cardData) {
 function createCardElement(card) {
     const el = document.createElement('div');
     el.className = 'card';
+    if (card.inactive) el.classList.add('card-inactive');
     el.style.left = card.pos_x + 'px';
     el.style.top = card.pos_y + 'px';
     el.dataset.id = card.id;
@@ -1224,6 +1225,8 @@ function openEditPanel(card) {
         r.checked = r.value === pinPos;
     });
 
+    document.getElementById('edit-card-inactive').checked = !!card.inactive;
+
     document.getElementById('edit-panel').classList.add('open');
     setTimeout(() => document.getElementById('edit-card-title').focus(), 50);
 }
@@ -1254,6 +1257,7 @@ async function onSaveEditCard(e) {
             card.description = updated.description;
             card.image_path = updated.image_path;
             card.pin_position = updated.pin_position;
+            card.inactive = updated.inactive;
             updateCardElement(card);
             renderConnections();
         }
@@ -1264,6 +1268,8 @@ async function onSaveEditCard(e) {
 function updateCardElement(card) {
     const pinEl = card.el.querySelector('.card-pin');
     pinEl.className = `card-pin pin-${card.pin_position || 'center'}`;
+
+    card.el.classList.toggle('card-inactive', !!card.inactive);
 
     const content = card.el.querySelector('.card-content');
     content.innerHTML = `
