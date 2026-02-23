@@ -840,8 +840,12 @@ function deselectAll() {
 function updateToolbar() {
     const connectBtn = document.getElementById('connect-btn');
     const disconnectBtn = document.getElementById('disconnect-btn');
+    const deleteBtn = document.getElementById('delete-selected-btn');
 
-    if (selectedCardIds.size === 2) {
+    const hasSelection = selectedCardIds.size > 0 || selectedNoteIds.size > 0;
+    deleteBtn.style.display = hasSelection ? 'inline-block' : 'none';
+
+    if (selectedCardIds.size === 2 && selectedNoteIds.size === 0) {
         const [id1, id2] = [...selectedCardIds];
         if (areConnected(id1, id2)) {
             connectBtn.style.display = 'none';
