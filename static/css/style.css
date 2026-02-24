@@ -23,6 +23,7 @@ body {
     background-size: cover;
     background-position: center;
     touch-action: none;
+    overflow: hidden;
 }
 
 #canvas {
@@ -42,6 +43,7 @@ body {
     height: 100%;
     pointer-events: none;
     z-index: 50;
+    overflow: visible;
 }
 
 #reset-pan-btn {
