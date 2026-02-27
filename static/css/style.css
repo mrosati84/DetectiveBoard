@@ -368,6 +368,15 @@ body {
     gap: 8px;
 }
 
+#auth-username {
+    font-size: 13px;
+    color: #f5e6c8;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 #auth-email {
     font-size: 13px;
     color: rgba(245, 230, 200, 0.75);
