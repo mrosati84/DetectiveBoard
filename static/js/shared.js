@@ -23,7 +23,7 @@ async function checkAuth() {
     });
     if (res.ok) {
         const user = await res.json();
-        document.getElementById('auth-email').textContent = user.email;
+        document.getElementById('auth-username').textContent = user.username;
         document.getElementById('auth-logged-out').style.display = 'none';
         document.getElementById('auth-logged-in').style.display = 'flex';
     }
@@ -33,7 +33,7 @@ function openLoginModal() {
     document.getElementById('login-modal-overlay').classList.add('open');
     document.getElementById('login-form').reset();
     document.getElementById('login-error').textContent = '';
-    setTimeout(() => document.getElementById('login-email').focus(), 50);
+    setTimeout(() => document.getElementById('login-username').focus(), 50);
 }
 
 function closeLoginModal() {
@@ -44,7 +44,7 @@ function openRegisterModal() {
     document.getElementById('register-modal-overlay').classList.add('open');
     document.getElementById('register-form').reset();
     document.getElementById('register-error').textContent = '';
-    setTimeout(() => document.getElementById('register-email').focus(), 50);
+    setTimeout(() => document.getElementById('register-username').focus(), 50);
 }
 
 function closeRegisterModal() {
@@ -53,20 +53,20 @@ function closeRegisterModal() {
 
 async function handleLogin(e) {
     e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
+    const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
     const errorEl = document.getElementById('login-error');
     errorEl.textContent = '';
     const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (res.ok) {
         setToken(data.token);
         closeLoginModal();
-        document.getElementById('auth-email').textContent = data.email;
+        document.getElementById('auth-username').textContent = data.username;
         document.getElementById('auth-logged-out').style.display = 'none';
         document.getElementById('auth-logged-in').style.display = 'flex';
     } else {
@@ -76,20 +76,20 @@ async function handleLogin(e) {
 
 async function handleRegister(e) {
     e.preventDefault();
-    const email = document.getElementById('register-email').value.trim();
+    const username = document.getElementById('register-username').value.trim();
     const password = document.getElementById('register-password').value;
     const errorEl = document.getElementById('register-error');
     errorEl.textContent = '';
     const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (res.ok) {
         setToken(data.token);
         closeRegisterModal();
-        document.getElementById('auth-email').textContent = data.email;
+        document.getElementById('auth-username').textContent = data.username;
         document.getElementById('auth-logged-out').style.display = 'none';
         document.getElementById('auth-logged-in').style.display = 'flex';
     } else {

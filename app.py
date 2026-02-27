@@ -126,10 +126,12 @@ def share_board(token):
 @app.route("/api/auth/register", methods=["POST"])
 def register():
     data = request.get_json()
-    email = (data.get("email") or "").strip().lower()
+    username = (data.get("username") or "").strip().lower()
     password = data.get("password") or ""
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+    if "@" in username:
+        return jsonify({"error": "Username cannot contain @"}), 400
     if len(password) < 8:
         return jsonify({"error": "Password must be at least 8 characters"}), 400
 
@@ -139,7 +141,7 @@ def register():
     try:
         cur.execute(
             "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id, email",
-            (email, password_hash),
+            (username, password_hash),
         )
         user = dict(cur.fetchone())
         conn.commit()
@@ -147,34 +149,34 @@ def register():
         conn.rollback()
         cur.close()
         conn.close()
-        return jsonify({"error": "Email already registered"}), 409
+        return jsonify({"error": "Username already taken"}), 409
     cur.close()
     conn.close()
 
     token = create_token(user["id"])
-    return jsonify({"token": token, "email": user["email"]}), 201
+    return jsonify({"token": token, "username": user["email"]}), 201
 
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
-    email = (data.get("email") or "").strip().lower()
+    username = (data.get("username") or "").strip().lower()
     password = data.get("password") or ""
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT id, email, password_hash FROM users WHERE email = %s", (email,))
+    cur.execute("SELECT id, email, password_hash FROM users WHERE email = %s", (username,))
     user = cur.fetchone()
     cur.close()
     conn.close()
 
     if not user or not check_password_hash(user["password_hash"], password):
-        return jsonify({"error": "Invalid email or password"}), 401
+        return jsonify({"error": "Invalid username or password"}), 401
 
     token = create_token(user["id"])
-    return jsonify({"token": token, "email": user["email"]})
+    return jsonify({"token": token, "username": user["email"]})
 
 
 @app.route("/api/auth/me", methods=["GET"])
@@ -188,7 +190,7 @@ def get_me():
     conn.close()
     if not user:
         return jsonify({"error": "User not found"}), 404
-    return jsonify(dict(user))
+    return jsonify({"id": user["id"], "username": user["email"]})
 
 
 # ---- Boards ----

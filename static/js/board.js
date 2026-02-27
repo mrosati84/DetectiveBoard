@@ -13,7 +13,7 @@ function getColorEntry(color) {
 
 // ---- Auth state ----
 const TOKEN_KEY = 'db_token';
-let currentUser = null; // { id, email }
+let currentUser = null; // { id, username }
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
 function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
@@ -40,7 +40,7 @@ async function checkAuth() {
 }
 
 function onLoggedIn() {
-    document.getElementById('auth-email').textContent = currentUser.email;
+    document.getElementById('auth-username').textContent = currentUser.username;
     document.getElementById('auth-logged-out').style.display = 'none';
     document.getElementById('auth-logged-in').style.display = 'flex';
     document.getElementById('menu-toggle').style.display = '';
@@ -65,19 +65,19 @@ function onLoggedOut() {
 
 async function handleLogin(e) {
     e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
+    const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
     const errorEl = document.getElementById('login-error');
     errorEl.textContent = '';
     const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (res.ok) {
         setToken(data.token);
-        currentUser = { email: data.email };
+        currentUser = { username: data.username };
         closeLoginModal();
         onLoggedIn();
     } else {
@@ -87,19 +87,19 @@ async function handleLogin(e) {
 
 async function handleRegister(e) {
     e.preventDefault();
-    const email = document.getElementById('register-email').value.trim();
+    const username = document.getElementById('register-username').value.trim();
     const password = document.getElementById('register-password').value;
     const errorEl = document.getElementById('register-error');
     errorEl.textContent = '';
     const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (res.ok) {
         setToken(data.token);
-        currentUser = { email: data.email };
+        currentUser = { username: data.username };
         closeRegisterModal();
         onLoggedIn();
     } else {
@@ -116,7 +116,7 @@ function openLoginModal() {
     document.getElementById('login-modal-overlay').classList.add('open');
     document.getElementById('login-form').reset();
     document.getElementById('login-error').textContent = '';
-    setTimeout(() => document.getElementById('login-email').focus(), 50);
+    setTimeout(() => document.getElementById('login-username').focus(), 50);
 }
 
 function closeLoginModal() {
@@ -127,7 +127,7 @@ function openRegisterModal() {
     document.getElementById('register-modal-overlay').classList.add('open');
     document.getElementById('register-form').reset();
     document.getElementById('register-error').textContent = '';
-    setTimeout(() => document.getElementById('register-email').focus(), 50);
+    setTimeout(() => document.getElementById('register-username').focus(), 50);
 }
 
 function closeRegisterModal() {
