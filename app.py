@@ -116,7 +116,7 @@ def share_board(token):
     cur.close()
     conn.close()
     if not row:
-        return render_template("404.html"), 404
+        return render_template("404.html", page_title="Board not found", page_message="This board is no longer shared or the link is invalid."), 404
     return render_template("shared.html", token=token)
 
 
@@ -627,6 +627,11 @@ def enable_share(board_id):
     cur.close()
     conn.close()
     return jsonify({"share_token": token, "share_url": f"/share/{token}"})
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html"), 404
 
 
 @app.route("/api/boards/<int:board_id>/share", methods=["DELETE"])

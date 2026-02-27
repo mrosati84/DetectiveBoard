@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Board not found — DetectiveBoard{% endblock %}
+{% block title %}{{ page_title|default('Page not found') }} — DetectiveBoard{% endblock %}
 
 {% block scripts %}{% endblock %}
 
@@ -11,8 +11,8 @@
 <div id="error-page">
     <div id="error-content">
         <div id="error-icon">&#128269;</div>
-        <h1>Board not found</h1>
-        <p>This board is no longer shared or the link is invalid.</p>
+        <h1>{{ page_title|default('Page not found') }}</h1>
+        <p>{{ page_message|default('The page you are looking for does not exist.') }}</p>
         <a href="/" class="btn-primary">Go to home</a>
     </div>
 </div>
