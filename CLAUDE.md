@@ -50,7 +50,10 @@ DATABASE_PORT=5432
 DATABASE_USER=postgres
 DATABASE_PASSWORD=postgres
 DATABASE_NAME=postgres
+SECRET_KEY=<long random value>
 ```
+
+`SECRET_KEY` is used for JWT signing and must be set (use a long, random secret in production; any value for local dev).
 
 ## Key UI Behavior
 

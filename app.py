@@ -21,7 +21,9 @@ UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or os.path.join(
 )
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable must be set")
 TOKEN_EXPIRY_DAYS = 30
 
 ALLOWED_CARD_COLORS = {"#f5e6c8", "#f5d0c8", "#d5e8d0", "#2a1e14"}
