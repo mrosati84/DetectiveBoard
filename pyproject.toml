@@ -11,4 +11,5 @@ dependencies = [
     "alembic>=1.13",
     "PyJWT>=2.8",
     "gunicorn>=23.0",
+    "flask-limiter>=3.5",
 ]

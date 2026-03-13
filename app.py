@@ -9,6 +9,8 @@ import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -27,6 +29,18 @@ if not SECRET_KEY:
 TOKEN_EXPIRY_DAYS = 30
 
 ALLOWED_CARD_COLORS = {"#f5e6c8", "#f5d0c8", "#d5e8d0", "#2a1e14"}
+
+RATE_LIMIT_AUTH = os.getenv("RATE_LIMIT_AUTH", "5 per minute")
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    storage_uri=os.getenv("RATE_LIMIT_STORAGE_URI", "memory://"),
+)
+
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({"error": "Too many requests. Try again later."}), 429
 
 
 def get_db():
@@ -126,6 +140,7 @@ def share_board(token):
 
 
 @app.route("/api/auth/register", methods=["POST"])
+@limiter.limit(RATE_LIMIT_AUTH)
 def register():
     data = request.get_json()
     username = (data.get("username") or "").strip().lower()
@@ -160,6 +175,7 @@ def register():
 
 
 @app.route("/api/auth/login", methods=["POST"])
+@limiter.limit(RATE_LIMIT_AUTH)
 def login():
     data = request.get_json()
     username = (data.get("username") or "").strip().lower()
