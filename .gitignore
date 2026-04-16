@@ -12,3 +12,6 @@ wheels/
 static/uploads/*
 .env
 .DS_STORE
+
+# Forge mcp file
+.mcp.json
