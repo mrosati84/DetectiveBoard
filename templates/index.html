@@ -55,8 +55,10 @@
 <div id="toolbar" style="display:none;">
     <button id="add-card-btn" class="toolbar-btn" onclick="openModal()">+ Card</button>
     <button id="add-note-btn" class="toolbar-btn" onclick="openNoteModal()">&#128203; Note</button>
-    <button id="edit-selected-btn" class="toolbar-btn" onclick="editSelectedCard()" style="display:none;">&#9998; Edit</button>
-    <button id="delete-selected-btn" class="toolbar-btn" onclick="deleteSelected()" style="display:none;">&#128465; Delete</button>
+    <button id="edit-selected-btn" class="toolbar-btn" onclick="editSelectedCard()" style="display:none;">&#9998;
+        Edit</button>
+    <button id="delete-selected-btn" class="toolbar-btn" onclick="deleteSelected()" style="display:none;">&#128465;
+        Delete</button>
     <button id="connect-btn" class="toolbar-btn" onclick="connectCards()">&#128279; Connect</button>
     <button id="disconnect-btn" class="toolbar-btn" onclick="disconnectCards()">&#9986; Disconnect</button>
     <button id="share-btn" class="toolbar-btn" onclick="onShareToggle()" style="display:none;">&#128279; Share</button>
@@ -102,11 +104,16 @@
         <div class="form-group">
             <label>Color</label>
             <div class="color-picker" id="edit-color-picker">
-                <button type="button" class="color-dot color-dot-selected" data-color="" style="background:#fffef0;box-shadow:inset 0 0 0 1px #c0a888;" title="Bianco"></button>
-                <button type="button" class="color-dot" data-color="#f5e6c8" style="background:#f5e6c8;" title="Manila"></button>
-                <button type="button" class="color-dot" data-color="#f5d0c8" style="background:#f5d0c8;" title="Rosa"></button>
-                <button type="button" class="color-dot" data-color="#d5e8d0" style="background:#d5e8d0;" title="Verde"></button>
-                <button type="button" class="color-dot" data-color="#2a1e14" style="background:#2a1e14;" title="Scuro"></button>
+                <button type="button" class="color-dot color-dot-selected" data-color=""
+                    style="background:#fffef0;box-shadow:inset 0 0 0 1px #c0a888;" title="Bianco"></button>
+                <button type="button" class="color-dot" data-color="#f5e6c8" style="background:#f5e6c8;"
+                    title="Manila"></button>
+                <button type="button" class="color-dot" data-color="#f5d0c8" style="background:#f5d0c8;"
+                    title="Rosa"></button>
+                <button type="button" class="color-dot" data-color="#d5e8d0" style="background:#d5e8d0;"
+                    title="Verde"></button>
+                <button type="button" class="color-dot" data-color="#2a1e14" style="background:#2a1e14;"
+                    title="Scuro"></button>
             </div>
             <input type="hidden" name="color" id="edit-card-color" value="">
         </div>
@@ -118,172 +125,12 @@
     </form>
 </div>
 
-<!-- Note creation modal -->
-<div id="note-modal-overlay">
-    <div id="note-modal">
-        <h2>New Note</h2>
-        <form id="note-form">
-            <div class="form-group">
-                <label for="note-content">Text</label>
-                <textarea id="note-content" name="content" placeholder="Write here..."></textarea>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeNoteModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Create Note</button>
-            </div>
-        </form>
-    </div>
-</div>
+<!-- MODALS -->
+{% include 'partials/modals/_note_modal.html' %}
+{% include 'partials/modals/_card_creation_modal.html' %}
+{% include 'partials/modals/_login_modal.html' %}
+{% include 'partials/modals/_register_modal.html' %}
+{% include 'partials/modals/_share_modal.html' %}
+{% include 'partials/modals/_help_modal.html' %}
 
-<!-- Card creation modal -->
-<div id="modal-overlay">
-    <div id="modal">
-        <h2>New Card</h2>
-        <form id="card-form" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="card-title">Title <span class="required">*</span></label>
-                <input type="text" id="card-title" name="title" required maxlength="200" autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label for="card-description">Description</label>
-                <textarea id="card-description" name="description" placeholder="Optional notes..."></textarea>
-            </div>
-            <div class="form-group">
-                <label for="card-image">Image <span class="hint">(jpg/png, max 1MB)</span></label>
-                <input type="file" id="card-image" name="image" accept=".jpg,.jpeg,.png">
-            </div>
-            <div class="form-group">
-                <label>Color</label>
-                <div class="color-picker" id="modal-color-picker">
-                    <button type="button" class="color-dot color-dot-selected" data-color="" style="background:#fffef0;box-shadow:inset 0 0 0 1px #c0a888;" title="Bianco"></button>
-                    <button type="button" class="color-dot" data-color="#f5e6c8" style="background:#f5e6c8;" title="Manila"></button>
-                    <button type="button" class="color-dot" data-color="#f5d0c8" style="background:#f5d0c8;" title="Rosa"></button>
-                    <button type="button" class="color-dot" data-color="#d5e8d0" style="background:#d5e8d0;" title="Verde"></button>
-                    <button type="button" class="color-dot" data-color="#2a1e14" style="background:#2a1e14;" title="Scuro"></button>
-                </div>
-                <input type="hidden" name="color" id="modal-card-color" value="">
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Create Card</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Login modal -->
-<div id="login-modal-overlay">
-    <div id="login-modal">
-        <h2>Log in</h2>
-        <form id="login-form">
-            <div class="form-group">
-                <label for="login-username">Username</label>
-                <input type="text" id="login-username" name="username" required autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="login-password">Password</label>
-                <input type="password" id="login-password" name="password" required autocomplete="current-password">
-            </div>
-            <p id="login-error" class="auth-error"></p>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeLoginModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Log in</button>
-            </div>
-        </form>
-        <p class="auth-switch">Don't have an account? <a href="#" onclick="closeLoginModal(); openRegisterModal(); return false;">Sign up</a></p>
-    </div>
-</div>
-
-<!-- Register modal -->
-<div id="register-modal-overlay">
-    <div id="register-modal">
-        <h2>Sign up</h2>
-        <form id="register-form">
-            <div class="form-group">
-                <label for="register-username">Username</label>
-                <input type="text" id="register-username" name="username" required autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="register-password">Password <span class="hint">(min 8 characters)</span></label>
-                <input type="password" id="register-password" name="password" required minlength="8" autocomplete="new-password">
-            </div>
-            <p id="register-error" class="auth-error"></p>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeRegisterModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Sign up</button>
-            </div>
-        </form>
-        <p class="auth-switch">Already have an account? <a href="#" onclick="closeRegisterModal(); openLoginModal(); return false;">Log in</a></p>
-    </div>
-</div>
-
-<!-- Share modal -->
-<div id="share-modal-overlay">
-    <div id="share-modal">
-        <div id="share-modal-header">
-            <h2>&#128279; Share Board</h2>
-            <button id="share-modal-close" onclick="closeShareModal()" title="Close">&times;</button>
-        </div>
-        <p id="share-modal-desc">Anyone with this link can view the board (read-only).</p>
-        <div id="share-url-row">
-            <input type="text" id="share-url-input" readonly>
-            <button id="share-copy-btn" onclick="copyShareUrl()">Copy</button>
-        </div>
-    </div>
-</div>
-
-<!-- Help modal -->
-<div id="help-modal-overlay">
-    <div id="help-modal">
-        <div id="help-modal-header">
-            <h2>&#128218; How to use DetectiveBoard</h2>
-            <button id="help-modal-close" onclick="closeHelpModal()" title="Close">&times;</button>
-        </div>
-        <div id="help-modal-body">
-            <section class="help-section">
-                <h3>&#128247; Board navigation</h3>
-                <ul>
-                    <li><strong>Zoom:</strong> scroll the mouse wheel over the board</li>
-                    <li><strong>Pan:</strong> hold the middle mouse button and drag</li>
-                    <li><strong>Reset view:</strong> click the <em>Reset Pan</em> button in the top-right corner</li>
-                </ul>
-            </section>
-            <section class="help-section">
-                <h3>&#128204; Cards</h3>
-                <ul>
-                    <li><strong>Create:</strong> click <em>+ Card</em> in the toolbar, or double-click an empty spot on the board</li>
-                    <li><strong>Move:</strong> drag the card to the desired position</li>
-                    <li><strong>Select:</strong> click a card; hold <kbd>Shift</kbd> to add to the selection</li>
-                    <li><strong>Edit:</strong> double-click a card — a side panel opens where you can change the title, description, image and pin position</li>
-                    <li><strong>Delete (from panel):</strong> double-click the card, then click the <em>Delete</em> button in the side panel</li>
-                    <li><strong>Delete (keyboard):</strong> select one or more cards, then press <kbd>Del</kbd></li>
-                </ul>
-            </section>
-            <section class="help-section">
-                <h3>&#128203; Notes</h3>
-                <ul>
-                    <li><strong>Create:</strong> click <em>&#128203; Note</em> in the toolbar</li>
-                    <li><strong>Move:</strong> drag the note to the desired position</li>
-                    <li><strong>Edit:</strong> double-click a note to edit its text directly</li>
-                    <li><strong>Delete:</strong> click the note to select it, then press <kbd>Del</kbd></li>
-                </ul>
-            </section>
-            <section class="help-section">
-                <h3>&#129513; Connections (red yarn)</h3>
-                <ul>
-                    <li><strong>Connect:</strong> select two cards holding <kbd>Shift</kbd>, then click <em>&#128279; Connect</em> in the toolbar</li>
-                    <li><strong>Disconnect:</strong> select two already-connected cards holding <kbd>Shift</kbd>, then click <em>&#9986; Disconnect</em></li>
-                </ul>
-            </section>
-            <section class="help-section">
-                <h3>&#9000; Keyboard shortcuts</h3>
-                <ul>
-                    <li><kbd>Del</kbd> — delete the selected cards or notes</li>
-                    <li><kbd>Esc</kbd> — close any open panel or modal</li>
-                    <li><kbd>Shift</kbd> + click — multi-select cards and notes</li>
-                </ul>
-            </section>
-        </div>
-    </div>
-</div>
 {% endblock %}

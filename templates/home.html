@@ -52,11 +52,13 @@
             <article class="feature-card">
                 <div class="feature-img-wrap">
                     <span class="feature-pin"></span>
-                    <img src="/assets/homepage/board.jpg" alt="Cork board overview with cards and connections" class="feature-img">
+                    <img src="/assets/homepage/board.jpg" alt="Cork board overview with cards and connections"
+                        class="feature-img">
                 </div>
                 <div class="feature-text">
                     <h3 class="feature-title">&#128204; The Cork Board</h3>
-                    <p class="feature-desc">Your infinite investigation surface. Drag cards anywhere, zoom for detail, pan freely. Red yarn sags under gravity — just like the real thing.</p>
+                    <p class="feature-desc">Your infinite investigation surface. Drag cards anywhere, zoom for detail,
+                        pan freely. Red yarn sags under gravity — just like the real thing.</p>
                 </div>
             </article>
 
@@ -67,7 +69,8 @@
                 </div>
                 <div class="feature-text">
                     <h3 class="feature-title">&#128247; Suspect Cards</h3>
-                    <p class="feature-desc">A card for every suspect, clue or lead. Add a title, notes, and a photo. Connect two cards with red yarn to map their relationship.</p>
+                    <p class="feature-desc">A card for every suspect, clue or lead. Add a title, notes, and a photo.
+                        Connect two cards with red yarn to map their relationship.</p>
                 </div>
             </article>
 
@@ -78,7 +81,8 @@
                 </div>
                 <div class="feature-text">
                     <h3 class="feature-title">&#128203; Evidence Details</h3>
-                    <p class="feature-desc">Double-click any card to open the evidence panel. Edit title, description, image and pin position. Sticky notes for quick thoughts.</p>
+                    <p class="feature-desc">Double-click any card to open the evidence panel. Edit title, description,
+                        image and pin position. Sticky notes for quick thoughts.</p>
                 </div>
             </article>
 
@@ -138,49 +142,8 @@
     <span>Free &amp; no tracking</span>
 </footer>
 
-<!-- Login modal -->
-<div id="login-modal-overlay">
-    <div id="login-modal">
-        <h2>Log in</h2>
-        <form id="login-form">
-            <div class="form-group">
-                <label for="login-username">Username</label>
-                <input type="text" id="login-username" name="username" required autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="login-password">Password</label>
-                <input type="password" id="login-password" name="password" required autocomplete="current-password">
-            </div>
-            <p id="login-error" class="auth-error"></p>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeLoginModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Log in</button>
-            </div>
-        </form>
-        <p class="auth-switch">Don't have an account? <a href="#" onclick="closeLoginModal(); openRegisterModal(); return false;">Sign up</a></p>
-    </div>
-</div>
+<!-- MODALS -->
+{% include 'partials/modals/_login_modal.html' %}
+{% include 'partials/modals/_register_modal.html' %}
 
-<!-- Register modal -->
-<div id="register-modal-overlay">
-    <div id="register-modal">
-        <h2>Sign up</h2>
-        <form id="register-form">
-            <div class="form-group">
-                <label for="register-username">Username</label>
-                <input type="text" id="register-username" name="username" required autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="register-password">Password <span class="hint">(min 8 characters)</span></label>
-                <input type="password" id="register-password" name="password" required minlength="8" autocomplete="new-password">
-            </div>
-            <p id="register-error" class="auth-error"></p>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeRegisterModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Sign up</button>
-            </div>
-        </form>
-        <p class="auth-switch">Already have an account? <a href="#" onclick="closeRegisterModal(); openLoginModal(); return false;">Log in</a></p>
-    </div>
-</div>
 {% endblock %}
