@@ -12,7 +12,6 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -132,7 +131,14 @@ def share_board(token):
     cur.close()
     conn.close()
     if not row:
-        return render_template("404.html", page_title="Board not found", page_message="This board is no longer shared or the link is invalid."), 404
+        return (
+            render_template(
+                "404.html",
+                page_title="Board not found",
+                page_message="This board is no longer shared or the link is invalid.",
+            ),
+            404,
+        )
     return render_template("shared.html", token=token)
 
 
@@ -185,7 +191,9 @@ def login():
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT id, email, password_hash FROM users WHERE email = %s", (username,))
+    cur.execute(
+        "SELECT id, email, password_hash FROM users WHERE email = %s", (username,)
+    )
     user = cur.fetchone()
     cur.close()
     conn.close()
@@ -381,7 +389,17 @@ def create_card(board_id):
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color
         """,
-        (board_id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color),
+        (
+            board_id,
+            title,
+            description,
+            image_path,
+            pos_x,
+            pos_y,
+            pin_position,
+            inactive,
+            color,
+        ),
     )
     card = dict(cur.fetchone())
     conn.commit()
@@ -661,9 +679,7 @@ def disable_share(board_id):
         cur.close()
         conn.close()
         return jsonify({"error": "Board not found"}), 404
-    cur.execute(
-        "UPDATE boards SET share_token = NULL WHERE id = %s", (board_id,)
-    )
+    cur.execute("UPDATE boards SET share_token = NULL WHERE id = %s", (board_id,))
     conn.commit()
     cur.close()
     conn.close()
@@ -674,9 +690,7 @@ def disable_share(board_id):
 def get_shared_board(token):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute(
-        "SELECT id, name FROM boards WHERE share_token = %s", (token,)
-    )
+    cur.execute("SELECT id, name FROM boards WHERE share_token = %s", (token,))
     board = cur.fetchone()
     if not board:
         cur.close()
