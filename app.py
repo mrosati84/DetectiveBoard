@@ -20,16 +20,18 @@ app = Flask(__name__)
 UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or os.path.join(
     app.static_folder, "uploads"
 )
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
+
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable must be set")
+
 TOKEN_EXPIRY_DAYS = 30
-
 ALLOWED_CARD_COLORS = {"#f5e6c8", "#f5d0c8", "#d5e8d0", "#2a1e14"}
-
 RATE_LIMIT_AUTH = os.getenv("RATE_LIMIT_AUTH", "5 per minute")
+
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
