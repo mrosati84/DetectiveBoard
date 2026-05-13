@@ -457,6 +457,13 @@ body {
     margin-bottom: 4px;
 }
 
+.form-error {
+    color: #cc2200;
+    font-size: 12px;
+    min-height: 16px;
+    margin-top: 4px;
+}
+
 .auth-switch {
     margin-top: 14px;
     font-size: 12px;

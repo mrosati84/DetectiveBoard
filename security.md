@@ -137,11 +137,12 @@ if mime not in ("image/jpeg", "image/png"):
 
 La UI dice "max 1 MB" ma il server non impone nessun limite. Un attaccante può inviare direttamente richieste HTTP con file da gigabyte, esaurendo lo spazio su disco.
 
-**Fix:** aggiungere alla configurazione Flask:
+**Fix:** aggiungere alla configurazione Flask un limite leggermente superiore a 1 MiB per assorbire l'overhead di `multipart/form-data`, e validare comunque server-side che il file immagine non superi 1 MiB effettivi.
 ```python
-app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1 MB
+MAX_IMAGE_BYTES = 1 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_BYTES + (64 * 1024)
 ```
-Flask rifiuterà automaticamente le richieste più grandi con 413.
+Flask rifiuterà automaticamente le richieste molto grandi con 413, mentre la validazione applicativa manterrà il limite di prodotto a 1 MiB per immagine.
 
 ---
 

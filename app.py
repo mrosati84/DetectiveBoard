@@ -11,12 +11,17 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
 
 load_dotenv()
 
 app = Flask(__name__)
+
+MAX_IMAGE_BYTES = 1 * 1024 * 1024
+MAX_MULTIPART_OVERHEAD_BYTES = 64 * 1024
+UPLOAD_TOO_LARGE_MESSAGE = "File too large. Maximum image size is 1 MB."
+app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_BYTES + MAX_MULTIPART_OVERHEAD_BYTES
 
 UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or os.path.join(
     app.static_folder, "uploads"
@@ -41,6 +46,36 @@ limiter = Limiter(
 @app.errorhandler(429)
 def ratelimit_handler(e):
     return jsonify({"error": "Too many requests. Try again later."}), 429
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def request_entity_too_large(e):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": UPLOAD_TOO_LARGE_MESSAGE}), 413
+    return UPLOAD_TOO_LARGE_MESSAGE, 413
+
+
+def save_uploaded_card_image(file):
+    if not file or not file.filename:
+        return None
+
+    parts = file.filename.rsplit(".", 1)
+    if len(parts) != 2:
+        raise ValueError("Only jpg/png images are accepted")
+
+    ext = parts[-1].lower()
+    if ext not in ("jpg", "jpeg", "png"):
+        raise ValueError("Only jpg/png images are accepted")
+
+    file.stream.seek(0, os.SEEK_END)
+    file_size = file.stream.tell()
+    file.stream.seek(0)
+    if file_size > MAX_IMAGE_BYTES:
+        raise ValueError(UPLOAD_TOO_LARGE_MESSAGE)
+
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    file.save(os.path.join(UPLOAD_FOLDER, filename))
+    return f"/static/uploads/{filename}"
 
 
 def get_db():
@@ -362,18 +397,12 @@ def create_card(board_id):
         conn.close()
         return jsonify({"error": "Title is required"}), 400
 
-    image_path = None
-    if "image" in request.files:
-        file = request.files["image"]
-        if file and file.filename:
-            ext = file.filename.rsplit(".", 1)[-1].lower()
-            if ext not in ("jpg", "jpeg", "png"):
-                cur.close()
-                conn.close()
-                return jsonify({"error": "Only jpg/png images are accepted"}), 400
-            filename = f"{uuid.uuid4().hex}.{ext}"
-            file.save(os.path.join(UPLOAD_FOLDER, filename))
-            image_path = f"/static/uploads/{filename}"
+    try:
+        image_path = save_uploaded_card_image(request.files.get("image"))
+    except ValueError as exc:
+        cur.close()
+        conn.close()
+        return jsonify({"error": str(exc)}), 400
 
     cur.execute(
         """
@@ -421,18 +450,15 @@ def update_card(card_id):
             color = None
         fields.append("color = %s")
         values.append(color)
-        if "image" in request.files:
-            file = request.files["image"]
-            if file and file.filename:
-                ext = file.filename.rsplit(".", 1)[-1].lower()
-                if ext not in ("jpg", "jpeg", "png"):
-                    cur.close()
-                    conn.close()
-                    return jsonify({"error": "Only jpg/png images are accepted"}), 400
-                filename = f"{uuid.uuid4().hex}.{ext}"
-                file.save(os.path.join(UPLOAD_FOLDER, filename))
-                fields.append("image_path = %s")
-                values.append(f"/static/uploads/{filename}")
+        try:
+            image_path = save_uploaded_card_image(request.files.get("image"))
+        except ValueError as exc:
+            cur.close()
+            conn.close()
+            return jsonify({"error": str(exc)}), 400
+        if image_path:
+            fields.append("image_path = %s")
+            values.append(image_path)
         values.append(card_id)
     else:
         data = request.get_json()

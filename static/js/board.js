@@ -11,6 +11,40 @@ function getColorEntry(color) {
     return CARD_COLORS.find(c => c.value === (color || '')) || CARD_COLORS[0];
 }
 
+const MAX_IMAGE_BYTES = 1024 * 1024;
+const MAX_IMAGE_ERROR = 'File too large. Maximum image size is 1 MB.';
+
+function setFormError(elementId, message) {
+    document.getElementById(elementId).textContent = message || '';
+}
+
+function clearCreateCardError() {
+    setFormError('card-form-error', '');
+}
+
+function clearEditCardError() {
+    setFormError('edit-card-form-error', '');
+}
+
+function validateImageSize(inputId, errorId) {
+    const file = document.getElementById(inputId).files[0];
+    if (!file || file.size <= MAX_IMAGE_BYTES) return true;
+    setFormError(errorId, MAX_IMAGE_ERROR);
+    return false;
+}
+
+async function getErrorMessage(res, fallbackMessage) {
+    try {
+        const data = await res.json();
+        if (data && typeof data.error === 'string' && data.error) {
+            return data.error;
+        }
+    } catch (_) {
+        // Ignore invalid JSON error responses.
+    }
+    return fallbackMessage;
+}
+
 // ---- Auth state ----
 const TOKEN_KEY = 'db_token';
 let currentUser = null; // { id, username }
@@ -634,6 +668,9 @@ async function onCreateCard(e) {
     if (!currentBoardId) return;
 
     const form = e.target;
+    clearCreateCardError();
+    if (!validateImageSize('card-image', 'card-form-error')) return;
+
     const fd = new FormData(form);
 
     let x, y;
@@ -657,12 +694,14 @@ async function onCreateCard(e) {
         body: fd,
     });
     if (res.status === 401) { handleUnauthorized(); return; }
-    if (res.ok) {
-        const cardData = await res.json();
-        closeModal();
-        form.reset();
-        addCard(cardData);
+    if (!res.ok) {
+        setFormError('card-form-error', await getErrorMessage(res, 'Unable to create card.'));
+        return;
     }
+
+    const cardData = await res.json();
+    closeModal();
+    addCard(cardData);
 }
 
 // ---- Drag & drop ----
@@ -1273,6 +1312,7 @@ async function saveCardPosition(card) {
 
 function openModal() {
     if (!currentBoardId) return;
+    clearCreateCardError();
     document.getElementById('modal-overlay').classList.add('open');
     setTimeout(() => document.getElementById('card-title').focus(), 50);
 }
@@ -1280,6 +1320,7 @@ function openModal() {
 function closeModal() {
     document.getElementById('modal-overlay').classList.remove('open');
     document.getElementById('card-form').reset();
+    clearCreateCardError();
     document.querySelectorAll('#modal-color-picker .color-dot').forEach(d => d.classList.remove('color-dot-selected'));
     document.querySelector('#modal-color-picker .color-dot[data-color=""]').classList.add('color-dot-selected');
     document.getElementById('modal-card-color').value = '';
@@ -1290,6 +1331,7 @@ function closeModal() {
 
 function openEditPanel(card) {
     editingCardId = card.id;
+    clearEditCardError();
     document.getElementById('edit-card-title').value = card.title || '';
     document.getElementById('edit-card-description').value = card.description || '';
     document.getElementById('edit-card-image').value = '';
@@ -1325,12 +1367,16 @@ function closeEditPanel() {
     document.getElementById('edit-panel').classList.remove('open');
     editingCardId = null;
     document.getElementById('edit-card-form').reset();
+    clearEditCardError();
     document.getElementById('edit-current-image-wrap').style.display = 'none';
 }
 
 async function onSaveEditCard(e) {
     e.preventDefault();
     if (!editingCardId) return;
+
+    clearEditCardError();
+    if (!validateImageSize('edit-card-image', 'edit-card-form-error')) return;
 
     const fd = new FormData(e.target);
     const res = await fetch(`/api/cards/${editingCardId}`, {
@@ -1339,21 +1385,24 @@ async function onSaveEditCard(e) {
         body: fd,
     });
     if (res.status === 401) { handleUnauthorized(); return; }
-    if (res.ok) {
-        const updated = await res.json();
-        const card = cards.find(c => c.id === editingCardId);
-        if (card) {
-            card.title = updated.title;
-            card.description = updated.description;
-            card.image_path = updated.image_path;
-            card.pin_position = updated.pin_position;
-            card.inactive = updated.inactive;
-            card.color = updated.color || null;
-            updateCardElement(card);
-            renderConnections();
-        }
-        closeEditPanel();
+    if (!res.ok) {
+        setFormError('edit-card-form-error', await getErrorMessage(res, 'Unable to save card changes.'));
+        return;
     }
+
+    const updated = await res.json();
+    const card = cards.find(c => c.id === editingCardId);
+    if (card) {
+        card.title = updated.title;
+        card.description = updated.description;
+        card.image_path = updated.image_path;
+        card.pin_position = updated.pin_position;
+        card.inactive = updated.inactive;
+        card.color = updated.color || null;
+        updateCardElement(card);
+        renderConnections();
+    }
+    closeEditPanel();
 }
 
 function updateCardElement(card) {
