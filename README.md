@@ -22,7 +22,7 @@ DetectiveBoard is a Flask web application for building interactive, investigator
 | Area | Technology |
 | --- | --- |
 | Application | Python 3.13, Flask, Jinja2 |
-| Client | Plain JavaScript, CSS, HTML, and SVG (no frontend build step) |
+| Client | HTMX, plain JavaScript, CSS, HTML, and SVG (no frontend build step) |
 | Database | PostgreSQL 16 and `psycopg2` |
 | Schema migrations | Alembic |
 | Authentication | Werkzeug password hashing and JWT (`PyJWT`) |
@@ -44,7 +44,7 @@ The complete, locked dependency set is recorded in [`uv.lock`](uv.lock); direct 
 │   ├── home.html          # Landing, registration, and login UI
 │   ├── index.html         # Authenticated interactive board
 │   ├── shared.html        # Read-only shared board
-│   └── partials/modals/   # Card, note, help, auth, and sharing dialogs
+│   └── partials/          # Server-rendered fragments and reusable modal dialogs
 ├── static/
 │   ├── css/               # Landing-page and board styles
 │   ├── js/                # Home, editable board, and shared-board behavior

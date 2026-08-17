@@ -97,50 +97,6 @@ function onLoggedOut() {
     document.getElementById('auth-logo').setAttribute('href', '/');
 }
 
-async function handleLogin(e) {
-    e.preventDefault();
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
-    const errorEl = document.getElementById('login-error');
-    errorEl.textContent = '';
-    const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-        setToken(data.token);
-        currentUser = { username: data.username };
-        closeLoginModal();
-        onLoggedIn();
-    } else {
-        errorEl.textContent = data.error || 'Login failed';
-    }
-}
-
-async function handleRegister(e) {
-    e.preventDefault();
-    const username = document.getElementById('register-username').value.trim();
-    const password = document.getElementById('register-password').value;
-    const errorEl = document.getElementById('register-error');
-    errorEl.textContent = '';
-    const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-        setToken(data.token);
-        currentUser = { username: data.username };
-        closeRegisterModal();
-        onLoggedIn();
-    } else {
-        errorEl.textContent = data.error || 'Registration failed';
-    }
-}
-
 function logout() {
     clearToken();
     window.location.href = '/';
@@ -200,8 +156,13 @@ const MAX_ZOOM = 4;
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
 
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
-    document.getElementById('register-form').addEventListener('submit', handleRegister);
+    document.body.addEventListener('auth-success', event => {
+        setToken(event.detail.token);
+        currentUser = { username: event.detail.username };
+        closeLoginModal();
+        closeRegisterModal();
+        onLoggedIn();
+    });
     document.getElementById('new-board-form').addEventListener('submit', onCreateBoard);
     document.getElementById('card-form').addEventListener('submit', onCreateCard);
     document.getElementById('note-form').addEventListener('submit', onCreateNote);
