@@ -1,3 +1,4 @@
+import json
 import os
 import secrets
 import uuid
@@ -8,7 +9,7 @@ import jwt as pyjwt
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, jsonify, make_response, render_template, request, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -47,6 +48,11 @@ limiter = Limiter(
 
 @app.errorhandler(429)
 def ratelimit_handler(e):
+    if request.headers.get("HX-Request") == "true":
+        return render_template(
+            "partials/_auth_error.html",
+            message="Too many requests. Try again later.",
+        )
     return jsonify({"error": "Too many requests. Try again later."}), 429
 
 
@@ -183,18 +189,40 @@ def share_board(token):
 # ---- Auth ----
 
 
+def auth_payload():
+    """Read credentials from either the JSON API or an HTMX form submission."""
+    return (request.get_json(silent=True) or {}) if request.is_json else request.form
+
+
+def auth_error(message, status):
+    """Let HTMX swap validation feedback while preserving the JSON API contract."""
+    if request.headers.get("HX-Request") == "true":
+        return render_template("partials/_auth_error.html", message=message)
+    return jsonify({"error": message}), status
+
+
+def auth_success(token, username, status=200):
+    if request.headers.get("HX-Request") == "true":
+        response = make_response("", 204)
+        response.headers["HX-Trigger"] = json.dumps(
+            {"auth-success": {"token": token, "username": username}}
+        )
+        return response
+    return jsonify({"token": token, "username": username}), status
+
+
 @app.route("/api/auth/register", methods=["POST"])
 @limiter.limit(RATE_LIMIT_AUTH)
 def register():
-    data = request.get_json()
+    data = auth_payload()
     username = (data.get("username") or "").strip().lower()
     password = data.get("password") or ""
     if not username or not password:
-        return jsonify({"error": "Username and password are required"}), 400
+        return auth_error("Username and password are required", 400)
     if "@" in username:
-        return jsonify({"error": "Username cannot contain @"}), 400
+        return auth_error("Username cannot contain @", 400)
     if len(password) < 8:
-        return jsonify({"error": "Password must be at least 8 characters"}), 400
+        return auth_error("Password must be at least 8 characters", 400)
 
     password_hash = generate_password_hash(password)
     conn = get_db()
@@ -210,22 +238,22 @@ def register():
         conn.rollback()
         cur.close()
         conn.close()
-        return jsonify({"error": "Username already taken"}), 409
+        return auth_error("Username already taken", 409)
     cur.close()
     conn.close()
 
     token = create_token(user["id"])
-    return jsonify({"token": token, "username": user["email"]}), 201
+    return auth_success(token, user["email"], 201)
 
 
 @app.route("/api/auth/login", methods=["POST"])
 @limiter.limit(RATE_LIMIT_AUTH)
 def login():
-    data = request.get_json()
+    data = auth_payload()
     username = (data.get("username") or "").strip().lower()
     password = data.get("password") or ""
     if not username or not password:
-        return jsonify({"error": "Username and password are required"}), 400
+        return auth_error("Username and password are required", 400)
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -237,10 +265,10 @@ def login():
     conn.close()
 
     if not user or not check_password_hash(user["password_hash"], password):
-        return jsonify({"error": "Invalid username or password"}), 401
+        return auth_error("Invalid username or password", 401)
 
     token = create_token(user["id"])
-    return jsonify({"token": token, "username": user["email"]})
+    return auth_success(token, user["email"])
 
 
 @app.route("/api/auth/me", methods=["GET"])

@@ -2,7 +2,8 @@
 <div id="login-modal-overlay">
     <div id="login-modal">
         <h2>Log in</h2>
-        <form id="login-form">
+        <form id="login-form" hx-post="/api/auth/login" hx-target="#login-error" hx-swap="innerHTML"
+            hx-disabled-elt="find button[type='submit']">
             <div class="form-group">
                 <label for="login-username">Username</label>
                 <input type="text" id="login-username" name="username" required autocomplete="username">

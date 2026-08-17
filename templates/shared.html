@@ -30,51 +30,8 @@
 <!-- Reset pan button -->
 <button id="reset-pan-btn" onclick="resetPan()" title="Reset pan" style="display:none;">&#8982; Reset Pan</button>
 
-<!-- Login modal -->
-<div id="login-modal-overlay">
-    <div id="login-modal">
-        <h2>Log in</h2>
-        <form id="login-form">
-            <div class="form-group">
-                <label for="login-username">Username</label>
-                <input type="text" id="login-username" name="username" required autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="login-password">Password</label>
-                <input type="password" id="login-password" name="password" required autocomplete="current-password">
-            </div>
-            <p id="login-error" class="auth-error"></p>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeLoginModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Log in</button>
-            </div>
-        </form>
-        <p class="auth-switch">Don't have an account? <a href="#" onclick="closeLoginModal(); openRegisterModal(); return false;">Sign up</a></p>
-    </div>
-</div>
-
-<!-- Register modal -->
-<div id="register-modal-overlay">
-    <div id="register-modal">
-        <h2>Sign up</h2>
-        <form id="register-form">
-            <div class="form-group">
-                <label for="register-username">Username</label>
-                <input type="text" id="register-username" name="username" required autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="register-password">Password <span class="hint">(min 8 characters)</span></label>
-                <input type="password" id="register-password" name="password" required minlength="8" autocomplete="new-password">
-            </div>
-            <p id="register-error" class="auth-error"></p>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeRegisterModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Sign up</button>
-            </div>
-        </form>
-        <p class="auth-switch">Already have an account? <a href="#" onclick="closeRegisterModal(); openLoginModal(); return false;">Log in</a></p>
-    </div>
-</div>
+{% include 'partials/modals/_login_modal.html' %}
+{% include 'partials/modals/_register_modal.html' %}
 {% endblock %}
 
 {% block scripts %}
