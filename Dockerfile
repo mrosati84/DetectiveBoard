@@ -29,7 +29,8 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 
 # Copia solo i file applicativi necessari a runtime
-COPY --from=builder /app/app.py        ./app.py
+COPY --from=builder /app/app.py            ./app.py
+COPY --from=builder /app/detectiveboard    ./detectiveboard
 COPY --from=builder /app/alembic.ini   ./alembic.ini
 COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
 COPY --from=builder /app/templates     ./templates

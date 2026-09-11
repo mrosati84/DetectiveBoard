@@ -13,6 +13,9 @@ uv sync
 # Run the development server
 uv run flask --app app run --debug
 
+# Run the test suite
+uv run pytest
+
 # Run Alembic migrations
 uv run alembic upgrade head
 
@@ -26,7 +29,17 @@ DetectiveBoard is a local-only Flask web app that renders an interactive cork bo
 
 ## Architecture
 
-- **`app.py`**: Flask application entry point. Serves HTML pages and API endpoints, manages DB connections.
+- **`app.py`**: Thin entry point: `from detectiveboard import create_app` then `app = create_app()`. Exposes the module-level `app` used by Flask and Gunicorn.
+- **`detectiveboard/`**: Application package.
+  - `__init__.py`: `create_app()` factory — loads config, initializes the limiter, registers blueprints and error handlers.
+  - `config.py`: environment-driven config and shared constants.
+  - `extensions.py`: Flask extension singletons (the rate limiter).
+  - `db.py`: psycopg2 connections, the `db_cursor()` context manager, and ownership helpers.
+  - `auth.py`: JWT creation, the `require_auth` decorator, and the JSON body helper.
+  - `errors.py`: app-level 404/413/429 handlers.
+  - `blueprints/`: thin HTTP handlers (pages, auth, boards, cards, notes, connections, share) that call services and shape responses.
+  - `services/`: SQL and business logic per resource; takes an explicit cursor and user id.
+- **`tests/`**: pytest characterization suite (`uv run pytest`).
 - **`templates/`**: Jinja2 templates. `base.html` is the base layout; `index.html` extends it.
 - **`static/`**: Plain CSS and JS (no preprocessors, no build step). Uploaded card images go to `static/uploads/`.
 - **`assets/`**: Contains `cork_background.jpg`, used as the board background via Flask's static serving.

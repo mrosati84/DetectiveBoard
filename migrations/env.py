@@ -1,10 +1,11 @@
 import os
 from logging.config import fileConfig
 from urllib.parse import quote_plus
+
 from alembic import context
 from dotenv import load_dotenv
 
-load_dotenv()
+_ = load_dotenv()
 
 config = context.config
 

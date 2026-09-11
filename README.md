@@ -38,7 +38,19 @@ The complete, locked dependency set is recorded in [`uv.lock`](uv.lock); direct 
 
 ```text
 .
-├── app.py                 # Flask pages, REST API, auth, uploads, and DB access
+├── app.py                 # Thin entry point: create_app() and module-level app
+├── detectiveboard/        # Application package
+│   ├── __init__.py        # create_app() factory
+│   ├── config.py          # Environment-driven settings and constants
+│   ├── extensions.py      # Flask-Limiter singleton
+│   ├── db.py              # psycopg2 connections and ownership helpers
+│   ├── auth.py            # JWT, require_auth, and JSON body helper
+│   ├── errors.py          # 404/413/429 error handlers
+│   ├── blueprints/        # Thin HTTP route handlers
+│   └── services/          # SQL and business logic per resource
+├── tests/                 # pytest characterization suite
+│   ├── conftest.py        # Shared fixtures and app import
+│   └── test_contract.py   # HTTP contract tests
 ├── templates/             # Jinja pages and reusable modal partials
 │   ├── base.html
 │   ├── home.html          # Landing, registration, and login UI
@@ -61,7 +73,7 @@ The complete, locked dependency set is recorded in [`uv.lock`](uv.lock); direct 
 └── entrypoint.sh          # Runs migrations, then starts Gunicorn
 ```
 
-The best starting points are [`app.py`](app.py) for server behavior and API routes, [`static/js/board.js`](static/js/board.js) for board interactions, and [`templates/index.html`](templates/index.html) with [`static/css/style.css`](static/css/style.css) for the board UI.
+The best starting points are [`detectiveboard/blueprints/`](detectiveboard/blueprints/) for server behavior and API routes, [`detectiveboard/services/`](detectiveboard/services/) for SQL and business logic, [`static/js/board.js`](static/js/board.js) for board interactions, and [`templates/index.html`](templates/index.html) with [`static/css/style.css`](static/css/style.css) for the board UI.
 
 ## Local development
 
