@@ -13,3 +13,8 @@ dependencies = [
     "gunicorn>=23.0",
     "flask-limiter>=3.5",
 ]
+
+[dependency-groups]
+dev = [
+    "cryptography>=50.0.1",
+]

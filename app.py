@@ -1,20 +1,31 @@
 import os
 import secrets
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from functools import wraps
+from typing import Protocol, TypeVar, cast
 
 import jwt as pyjwt
 import psycopg2
+import psycopg2.extensions
 import psycopg2.extras
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import (
+    Flask,
+    Response,
+    jsonify,
+    render_template,
+    request,
+    send_from_directory,
+)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.datastructures import FileStorage
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 from werkzeug.security import check_password_hash, generate_password_hash
 
-load_dotenv()
+_ = load_dotenv()
 
 app = Flask(__name__)
 
@@ -23,19 +34,19 @@ MAX_MULTIPART_OVERHEAD_BYTES = 64 * 1024
 UPLOAD_TOO_LARGE_MESSAGE = "File too large. Maximum image size is 1 MB."
 app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_BYTES + MAX_MULTIPART_OVERHEAD_BYTES
 
-UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or os.path.join(
-    app.static_folder, "uploads"
+UPLOAD_FOLDER: str = os.environ.get("UPLOAD_FOLDER") or os.path.join(
+    app.static_folder or "", "uploads"
 )
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY: str = os.getenv("SECRET_KEY") or ""
 
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable must be set")
 
 TOKEN_EXPIRY_DAYS = 30
-ALLOWED_CARD_COLORS = {"#f5e6c8", "#f5d0c8", "#d5e8d0", "#2a1e14"}
+ALLOWED_CARD_COLORS: set[str] = {"#f5e6c8", "#f5d0c8", "#d5e8d0", "#2a1e14"}
 RATE_LIMIT_AUTH = os.getenv("RATE_LIMIT_AUTH", "5 per minute")
 
 limiter = Limiter(
@@ -45,19 +56,33 @@ limiter = Limiter(
 )
 
 
+class _AuthedRequest(Protocol):
+    user_id: int
+
+
+def _authed() -> _AuthedRequest:
+    return cast("_AuthedRequest", cast("object", request))
+
+
+def json_body() -> dict[str, object]:
+    return cast("dict[str, object]", request.get_json())
+
+
 @app.errorhandler(429)
-def ratelimit_handler(e):
+def ratelimit_handler(_e: HTTPException) -> tuple[Response, int]:
     return jsonify({"error": "Too many requests. Try again later."}), 429
 
 
 @app.errorhandler(RequestEntityTooLarge)
-def request_entity_too_large(e):
+def request_entity_too_large(
+    _e: HTTPException,
+) -> tuple[Response, int] | tuple[str, int]:
     if request.path.startswith("/api/"):
         return jsonify({"error": UPLOAD_TOO_LARGE_MESSAGE}), 413
     return UPLOAD_TOO_LARGE_MESSAGE, 413
 
 
-def save_uploaded_card_image(file):
+def save_uploaded_card_image(file: FileStorage | None) -> str | None:
     if not file or not file.filename:
         return None
 
@@ -69,9 +94,9 @@ def save_uploaded_card_image(file):
     if ext not in ("jpg", "jpeg", "png"):
         raise ValueError("Only jpg/png images are accepted")
 
-    file.stream.seek(0, os.SEEK_END)
+    _ = file.stream.seek(0, os.SEEK_END)
     file_size = file.stream.tell()
-    file.stream.seek(0)
+    _ = file.stream.seek(0)
     if file_size > MAX_IMAGE_BYTES:
         raise ValueError(UPLOAD_TOO_LARGE_MESSAGE)
 
@@ -80,7 +105,7 @@ def save_uploaded_card_image(file):
     return f"/static/uploads/{filename}"
 
 
-def get_db():
+def get_db() -> psycopg2.extensions.connection:
     return psycopg2.connect(
         host=os.getenv("DATABASE_HOST", "localhost"),
         port=int(os.getenv("DATABASE_PORT", 5432)),
@@ -90,41 +115,51 @@ def get_db():
     )
 
 
-def create_token(user_id):
-    payload = {
+def create_token(user_id: int) -> str:
+    payload: dict[str, object] = {
         "user_id": user_id,
         "exp": datetime.now(timezone.utc) + timedelta(days=TOKEN_EXPIRY_DAYS),
     }
     return pyjwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 
-def require_auth(f):
+_F = TypeVar("_F", bound=Callable[..., object])
+
+
+def require_auth(f: _F) -> _F:
     @wraps(f)
-    def decorated(*args, **kwargs):
+    def decorated(*args: object, **kwargs: object) -> object:
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
             return jsonify({"error": "Authentication required"}), 401
         token = auth_header[7:]
         try:
-            payload = pyjwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            request.user_id = payload["user_id"]
+            payload = cast(
+                "dict[str, object]",
+                pyjwt.decode(token, SECRET_KEY, algorithms=["HS256"]),
+            )
+            _authed().user_id = cast("int", payload["user_id"])
         except pyjwt.ExpiredSignatureError:
             return jsonify({"error": "Token expired"}), 401
         except pyjwt.InvalidTokenError:
             return jsonify({"error": "Invalid token"}), 401
         return f(*args, **kwargs)
 
-    return decorated
+    return cast("_F", decorated)
 
 
-def board_belongs_to_user(board_id, user_id, cur):
+def board_belongs_to_user(
+    board_id: int, user_id: int, cur: psycopg2.extensions.cursor
+) -> bool:
     cur.execute(
         "SELECT id FROM boards WHERE id = %s AND user_id = %s", (board_id, user_id)
     )
     return cur.fetchone() is not None
 
 
-def card_belongs_to_user(card_id, user_id, cur):
+def card_belongs_to_user(
+    card_id: int, user_id: int, cur: psycopg2.extensions.cursor
+) -> bool:
     cur.execute(
         "SELECT c.id FROM cards c JOIN boards b ON b.id = c.board_id WHERE c.id = %s AND b.user_id = %s",
         (card_id, user_id),
@@ -132,7 +167,9 @@ def card_belongs_to_user(card_id, user_id, cur):
     return cur.fetchone() is not None
 
 
-def note_belongs_to_user(note_id, user_id, cur):
+def note_belongs_to_user(
+    note_id: int, user_id: int, cur: psycopg2.extensions.cursor
+) -> bool:
     cur.execute(
         "SELECT n.id FROM notes n JOIN boards b ON b.id = n.board_id WHERE n.id = %s AND b.user_id = %s",
         (note_id, user_id),
@@ -141,27 +178,27 @@ def note_belongs_to_user(note_id, user_id, cur):
 
 
 @app.route("/health")
-def health():
+def health() -> Response:
     return jsonify({"message": "OK"})
 
 
 @app.route("/assets/<path:filename>")
-def serve_assets(filename):
+def serve_assets(filename: str) -> Response:
     return send_from_directory("assets", filename)
 
 
 @app.route("/")
-def home():
+def home() -> str:
     return render_template("home.html")
 
 
 @app.route("/board")
-def board():
+def board() -> str:
     return render_template("index.html")
 
 
 @app.route("/share/<token>")
-def share_board(token):
+def share_board(token: str) -> str | tuple[str, int]:
     conn = get_db()
     cur = conn.cursor()
     cur.execute("SELECT id FROM boards WHERE share_token = %s", (token,))
@@ -185,10 +222,10 @@ def share_board(token):
 
 @app.route("/api/auth/register", methods=["POST"])
 @limiter.limit(RATE_LIMIT_AUTH)
-def register():
-    data = request.get_json()
-    username = (data.get("username") or "").strip().lower()
-    password = data.get("password") or ""
+def register() -> tuple[Response, int]:
+    data = json_body()
+    username = cast("str", data.get("username") or "").strip().lower()
+    password = cast("str", data.get("password") or "")
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
     if "@" in username:
@@ -204,7 +241,9 @@ def register():
             "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id, email",
             (username, password_hash),
         )
-        user = dict(cur.fetchone())
+        row = cur.fetchone()
+        assert row is not None
+        user = dict(row)
         conn.commit()
     except psycopg2.IntegrityError:
         conn.rollback()
@@ -214,16 +253,16 @@ def register():
     cur.close()
     conn.close()
 
-    token = create_token(user["id"])
-    return jsonify({"token": token, "username": user["email"]}), 201
+    token = create_token(cast("int", user["id"]))
+    return jsonify({"token": token, "username": cast("str", user["email"])}), 201
 
 
 @app.route("/api/auth/login", methods=["POST"])
 @limiter.limit(RATE_LIMIT_AUTH)
-def login():
-    data = request.get_json()
-    username = (data.get("username") or "").strip().lower()
-    password = data.get("password") or ""
+def login() -> Response | tuple[Response, int]:
+    data = json_body()
+    username = cast("str", data.get("username") or "").strip().lower()
+    password = cast("str", data.get("password") or "")
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
 
@@ -236,25 +275,29 @@ def login():
     cur.close()
     conn.close()
 
-    if not user or not check_password_hash(user["password_hash"], password):
+    if not user or not check_password_hash(
+        cast("str", user["password_hash"]), password
+    ):
         return jsonify({"error": "Invalid username or password"}), 401
 
-    token = create_token(user["id"])
-    return jsonify({"token": token, "username": user["email"]})
+    token = create_token(cast("int", user["id"]))
+    return jsonify({"token": token, "username": cast("str", user["email"])})
 
 
 @app.route("/api/auth/me", methods=["GET"])
 @require_auth
-def get_me():
+def get_me() -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT id, email FROM users WHERE id = %s", (request.user_id,))
+    cur.execute("SELECT id, email FROM users WHERE id = %s", (_authed().user_id,))
     user = cur.fetchone()
     cur.close()
     conn.close()
     if not user:
         return jsonify({"error": "User not found"}), 404
-    return jsonify({"id": user["id"], "username": user["email"]})
+    return jsonify(
+        {"id": cast("int", user["id"]), "username": cast("str", user["email"])}
+    )
 
 
 # ---- Boards ----
@@ -262,12 +305,12 @@ def get_me():
 
 @app.route("/api/boards", methods=["GET"])
 @require_auth
-def list_boards():
+def list_boards() -> Response:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(
         "SELECT id, name, created_at FROM boards WHERE user_id = %s ORDER BY created_at DESC",
-        (request.user_id,),
+        (_authed().user_id,),
     )
     boards = [dict(b) for b in cur.fetchall()]
     cur.close()
@@ -277,18 +320,20 @@ def list_boards():
 
 @app.route("/api/boards", methods=["POST"])
 @require_auth
-def create_board():
-    data = request.get_json()
-    name = (data.get("name") or "").strip()
+def create_board() -> tuple[Response, int]:
+    data = json_body()
+    name = cast("str", data.get("name") or "").strip()
     if not name:
         return jsonify({"error": "Name is required"}), 400
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(
         "INSERT INTO boards (name, user_id) VALUES (%s, %s) RETURNING id, name, created_at",
-        (name, request.user_id),
+        (name, _authed().user_id),
     )
-    board = dict(cur.fetchone())
+    row = cur.fetchone()
+    assert row is not None
+    board = dict(row)
     conn.commit()
     cur.close()
     conn.close()
@@ -297,12 +342,12 @@ def create_board():
 
 @app.route("/api/boards/<int:board_id>", methods=["GET"])
 @require_auth
-def get_board(board_id):
+def get_board(board_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(
         "SELECT id, name, share_token FROM boards WHERE id = %s AND user_id = %s",
-        (board_id, request.user_id),
+        (board_id, _authed().user_id),
     )
     board = cur.fetchone()
     if not board:
@@ -344,16 +389,16 @@ def get_board(board_id):
 
 @app.route("/api/boards/<int:board_id>", methods=["PATCH"])
 @require_auth
-def rename_board(board_id):
-    data = request.get_json()
-    name = (data.get("name") or "").strip()
+def rename_board(board_id: int) -> Response | tuple[Response, int]:
+    data = json_body()
+    name = cast("str", data.get("name") or "").strip()
     if not name:
         return jsonify({"error": "Name is required"}), 400
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(
         "UPDATE boards SET name = %s WHERE id = %s AND user_id = %s RETURNING id, name",
-        (name, board_id, request.user_id),
+        (name, board_id, _authed().user_id),
     )
     board = cur.fetchone()
     conn.commit()
@@ -366,11 +411,12 @@ def rename_board(board_id):
 
 @app.route("/api/boards/<int:board_id>", methods=["DELETE"])
 @require_auth
-def delete_board(board_id):
+def delete_board(board_id: int) -> Response:
     conn = get_db()
     cur = conn.cursor()
     cur.execute(
-        "DELETE FROM boards WHERE id = %s AND user_id = %s", (board_id, request.user_id)
+        "DELETE FROM boards WHERE id = %s AND user_id = %s",
+        (board_id, _authed().user_id),
     )
     conn.commit()
     cur.close()
@@ -383,10 +429,10 @@ def delete_board(board_id):
 
 @app.route("/api/boards/<int:board_id>/cards", methods=["POST"])
 @require_auth
-def create_card(board_id):
+def create_card(board_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not board_belongs_to_user(board_id, request.user_id, cur):
+    if not board_belongs_to_user(board_id, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Board not found"}), 404
@@ -433,7 +479,9 @@ def create_card(board_id):
             color,
         ),
     )
-    card = dict(cur.fetchone())
+    row = cur.fetchone()
+    assert row is not None
+    card = dict(row)
     conn.commit()
     cur.close()
     conn.close()
@@ -442,14 +490,16 @@ def create_card(board_id):
 
 @app.route("/api/cards/<int:card_id>", methods=["PUT"])
 @require_auth
-def update_card(card_id):
+def update_card(card_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not card_belongs_to_user(card_id, request.user_id, cur):
+    if not card_belongs_to_user(card_id, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Card not found"}), 404
 
+    fields: list[str]
+    values: list[object]
     content_type = request.content_type or ""
     if "multipart/form-data" in content_type:
         title = (request.form.get("title") or "").strip()
@@ -482,7 +532,7 @@ def update_card(card_id):
             values.append(image_path)
         values.append(card_id)
     else:
-        data = request.get_json()
+        data = json_body()
         fields = []
         values = []
         for field in ("pos_x", "pos_y", "title", "description", "color"):
@@ -497,10 +547,11 @@ def update_card(card_id):
 
     cur.execute(
         f"UPDATE cards SET {', '.join(fields)} WHERE id = %s "
-        "RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color",
+        + "RETURNING id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color",
         values,
     )
     card = cur.fetchone()
+    assert card is not None
     conn.commit()
     cur.close()
     conn.close()
@@ -509,10 +560,10 @@ def update_card(card_id):
 
 @app.route("/api/cards/<int:card_id>", methods=["DELETE"])
 @require_auth
-def delete_card(card_id):
+def delete_card(card_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not card_belongs_to_user(card_id, request.user_id, cur):
+    if not card_belongs_to_user(card_id, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Card not found"}), 404
@@ -528,24 +579,26 @@ def delete_card(card_id):
 
 @app.route("/api/boards/<int:board_id>/notes", methods=["POST"])
 @require_auth
-def create_note(board_id):
+def create_note(board_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not board_belongs_to_user(board_id, request.user_id, cur):
+    if not board_belongs_to_user(board_id, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Board not found"}), 404
 
-    data = request.get_json()
-    content = (data.get("content") or "").strip()
-    pos_x = float(data.get("pos_x", 200))
-    pos_y = float(data.get("pos_y", 150))
+    data = json_body()
+    content = cast("str", data.get("content") or "").strip()
+    pos_x = float(cast("int", data.get("pos_x", 200)))
+    pos_y = float(cast("int", data.get("pos_y", 150)))
     cur.execute(
         "INSERT INTO notes (board_id, content, pos_x, pos_y) VALUES (%s, %s, %s, %s) "
-        "RETURNING id, content, pos_x, pos_y",
+        + "RETURNING id, content, pos_x, pos_y",
         (board_id, content, pos_x, pos_y),
     )
-    note = dict(cur.fetchone())
+    row = cur.fetchone()
+    assert row is not None
+    note = dict(row)
     conn.commit()
     cur.close()
     conn.close()
@@ -554,17 +607,17 @@ def create_note(board_id):
 
 @app.route("/api/notes/<int:note_id>", methods=["PUT"])
 @require_auth
-def update_note(note_id):
+def update_note(note_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not note_belongs_to_user(note_id, request.user_id, cur):
+    if not note_belongs_to_user(note_id, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Note not found"}), 404
 
-    data = request.get_json()
-    fields = []
-    values = []
+    data = json_body()
+    fields: list[str] = []
+    values: list[object] = []
     for field in ("content", "pos_x", "pos_y"):
         if field in data:
             fields.append(f"{field} = %s")
@@ -576,10 +629,11 @@ def update_note(note_id):
     values.append(note_id)
     cur.execute(
         f"UPDATE notes SET {', '.join(fields)} WHERE id = %s "
-        "RETURNING id, content, pos_x, pos_y",
+        + "RETURNING id, content, pos_x, pos_y",
         values,
     )
     note = cur.fetchone()
+    assert note is not None
     conn.commit()
     cur.close()
     conn.close()
@@ -588,10 +642,10 @@ def update_note(note_id):
 
 @app.route("/api/notes/<int:note_id>", methods=["DELETE"])
 @require_auth
-def delete_note(note_id):
+def delete_note(note_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not note_belongs_to_user(note_id, request.user_id, cur):
+    if not note_belongs_to_user(note_id, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Note not found"}), 404
@@ -607,10 +661,10 @@ def delete_note(note_id):
 
 @app.route("/api/connections", methods=["POST"])
 @require_auth
-def create_connection():
-    data = request.get_json()
-    id1 = data.get("card_id_1")
-    id2 = data.get("card_id_2")
+def create_connection() -> Response | tuple[Response, int]:
+    data = json_body()
+    id1 = cast("int", data.get("card_id_1"))
+    id2 = cast("int", data.get("card_id_2"))
     if not id1 or not id2:
         return jsonify({"error": "Both card IDs are required"}), 400
     if id1 > id2:
@@ -618,9 +672,9 @@ def create_connection():
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not card_belongs_to_user(id1, request.user_id, cur) or not card_belongs_to_user(
-        id2, request.user_id, cur
-    ):
+    if not card_belongs_to_user(
+        id1, _authed().user_id, cur
+    ) or not card_belongs_to_user(id2, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Card not found"}), 404
@@ -628,10 +682,12 @@ def create_connection():
     try:
         cur.execute(
             "INSERT INTO connections (card_id_1, card_id_2) VALUES (%s, %s) "
-            "RETURNING id, card_id_1, card_id_2",
+            + "RETURNING id, card_id_1, card_id_2",
             (id1, id2),
         )
-        connection = dict(cur.fetchone())
+        row = cur.fetchone()
+        assert row is not None
+        connection = dict(row)
         conn.commit()
         cur.close()
         conn.close()
@@ -645,18 +701,18 @@ def create_connection():
 
 @app.route("/api/connections", methods=["DELETE"])
 @require_auth
-def delete_connection():
-    data = request.get_json()
-    id1 = data.get("card_id_1")
-    id2 = data.get("card_id_2")
+def delete_connection() -> Response | tuple[Response, int]:
+    data = json_body()
+    id1 = cast("int", data.get("card_id_1"))
+    id2 = cast("int", data.get("card_id_2"))
     if id1 > id2:
         id1, id2 = id2, id1
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not card_belongs_to_user(id1, request.user_id, cur) or not card_belongs_to_user(
-        id2, request.user_id, cur
-    ):
+    if not card_belongs_to_user(
+        id1, _authed().user_id, cur
+    ) or not card_belongs_to_user(id2, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Card not found"}), 404
@@ -676,10 +732,10 @@ def delete_connection():
 
 @app.route("/api/boards/<int:board_id>/share", methods=["POST"])
 @require_auth
-def enable_share(board_id):
+def enable_share(board_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if not board_belongs_to_user(board_id, request.user_id, cur):
+    if not board_belongs_to_user(board_id, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Board not found"}), 404
@@ -695,16 +751,16 @@ def enable_share(board_id):
 
 
 @app.errorhandler(404)
-def page_not_found(e):
+def page_not_found(_e: HTTPException) -> tuple[str, int]:
     return render_template("404.html"), 404
 
 
 @app.route("/api/boards/<int:board_id>/share", methods=["DELETE"])
 @require_auth
-def disable_share(board_id):
+def disable_share(board_id: int) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor()
-    if not board_belongs_to_user(board_id, request.user_id, cur):
+    if not board_belongs_to_user(board_id, _authed().user_id, cur):
         cur.close()
         conn.close()
         return jsonify({"error": "Board not found"}), 404
@@ -716,7 +772,7 @@ def disable_share(board_id):
 
 
 @app.route("/api/share/<token>", methods=["GET"])
-def get_shared_board(token):
+def get_shared_board(token: str) -> Response | tuple[Response, int]:
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("SELECT id, name FROM boards WHERE share_token = %s", (token,))
@@ -725,7 +781,7 @@ def get_shared_board(token):
         cur.close()
         conn.close()
         return jsonify({"error": "Board not found"}), 404
-    board_id = board["id"]
+    board_id = cast("int", board["id"])
     cur.execute(
         "SELECT id, title, description, image_path, pos_x, pos_y, pin_position, inactive, color FROM cards WHERE board_id = %s",
         (board_id,),
