@@ -2,6 +2,7 @@
 __pycache__/
 *.py[oc]
 build/
+
 dist/
 wheels/
 *.egg-info
@@ -15,3 +16,7 @@ static/uploads/*
 
 # Forge mcp file
 .mcp.json
+
+# Ai generated files
+plans/
+.opencode/

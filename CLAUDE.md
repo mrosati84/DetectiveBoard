@@ -34,11 +34,13 @@ DetectiveBoard is a local-only Flask web app that renders an interactive cork bo
   - `__init__.py`: `create_app()` factory — loads config, initializes the limiter, registers blueprints and error handlers.
   - `config.py`: environment-driven config and shared constants.
   - `extensions.py`: Flask extension singletons (the rate limiter).
-  - `db.py`: psycopg2 connections, the `db_cursor()` context manager, and ownership helpers.
+  - `database.py`: SQLAlchemy engine/session lifecycle (`db_session()`, `get_engine()`) and `row_to_dict()`.
+  - `models.py`: SQLAlchemy declarative models (`Base`, `User`, `Board`, `Card`, `Connection`, `Note`); no ORM relationships, DB-level cascades only.
+  - `db.py`: Session-based ownership helpers (`board_belongs_to_user`, `card_belongs_to_user`, `note_belongs_to_user`).
   - `auth.py`: JWT creation, the `require_auth` decorator, and the JSON body helper.
   - `errors.py`: app-level 404/413/429 handlers.
   - `blueprints/`: thin HTTP handlers (pages, auth, boards, cards, notes, connections, share) that call services and shape responses.
-  - `services/`: SQL and business logic per resource; takes an explicit cursor and user id.
+  - `services/`: SQLAlchemy Core queries and business logic per resource; takes an explicit `Session` and user id.
 - **`tests/`**: pytest characterization suite (`uv run pytest`).
 - **`templates/`**: Jinja2 templates. `base.html` is the base layout; `index.html` extends it.
 - **`static/`**: Plain CSS and JS (no preprocessors, no build step). Uploaded card images go to `static/uploads/`.

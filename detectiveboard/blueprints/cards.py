@@ -4,7 +4,7 @@ from flask import Blueprint, Response, jsonify, request
 
 from detectiveboard.auth import current_user_id, json_body, require_auth
 from detectiveboard.config import ALLOWED_CARD_COLORS
-from detectiveboard.db import db_cursor
+from detectiveboard.database import db_session
 from detectiveboard.services import boards as boards_service
 from detectiveboard.services import cards as cards_service
 from detectiveboard.services.uploads import save_uploaded_card_image
@@ -15,8 +15,8 @@ bp = Blueprint("cards", __name__)
 @bp.route("/api/boards/<int:board_id>/cards", methods=["POST"])
 @require_auth
 def create_card(board_id: int) -> Response | tuple[Response, int]:
-    with db_cursor() as cur:
-        if not boards_service.board_is_owned(cur, board_id, current_user_id()):
+    with db_session() as session:
+        if not boards_service.board_is_owned(session, board_id, current_user_id()):
             return jsonify({"error": "Board not found"}), 404
 
         title = (request.form.get("title") or "").strip()
@@ -40,7 +40,7 @@ def create_card(board_id: int) -> Response | tuple[Response, int]:
             return jsonify({"error": str(exc)}), 400
 
         card = cards_service.create_card(
-            cur,
+            session,
             board_id,
             title,
             description,
@@ -51,15 +51,15 @@ def create_card(board_id: int) -> Response | tuple[Response, int]:
             color,
             image_path,
         )
-        cur.connection.commit()
+        session.commit()
     return jsonify(card), 201
 
 
 @bp.route("/api/cards/<int:card_id>", methods=["PUT"])
 @require_auth
 def update_card(card_id: int) -> Response | tuple[Response, int]:
-    with db_cursor() as cur:
-        if not cards_service.card_is_owned(cur, card_id, current_user_id()):
+    with db_session() as session:
+        if not cards_service.card_is_owned(session, card_id, current_user_id()):
             return jsonify({"error": "Card not found"}), 404
 
         updates: dict[str, object] = {}
@@ -93,17 +93,17 @@ def update_card(card_id: int) -> Response | tuple[Response, int]:
             if not updates:
                 return jsonify({"error": "Nothing to update"}), 400
 
-        card = cards_service.update_card(cur, card_id, updates)
-        cur.connection.commit()
+        card = cards_service.update_card(session, card_id, updates)
+        session.commit()
     return jsonify(card)
 
 
 @bp.route("/api/cards/<int:card_id>", methods=["DELETE"])
 @require_auth
 def delete_card(card_id: int) -> Response | tuple[Response, int]:
-    with db_cursor() as cur:
-        if not cards_service.card_is_owned(cur, card_id, current_user_id()):
+    with db_session() as session:
+        if not cards_service.card_is_owned(session, card_id, current_user_id()):
             return jsonify({"error": "Card not found"}), 404
-        cards_service.delete_card(cur, card_id)
-        cur.connection.commit()
+        cards_service.delete_card(session, card_id)
+        session.commit()
     return jsonify({"success": True})

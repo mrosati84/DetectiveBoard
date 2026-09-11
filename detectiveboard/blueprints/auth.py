@@ -2,8 +2,8 @@
 
 from typing import cast
 
-import psycopg2
 from flask import Blueprint, Response, current_app, jsonify
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from detectiveboard.auth import (
@@ -12,7 +12,7 @@ from detectiveboard.auth import (
     json_body,
     require_auth,
 )
-from detectiveboard.db import db_cursor
+from detectiveboard.database import db_session
 from detectiveboard.extensions import limiter
 from detectiveboard.services import accounts
 
@@ -33,12 +33,12 @@ def register() -> tuple[Response, int]:
         return jsonify({"error": "Password must be at least 8 characters"}), 400
 
     password_hash = generate_password_hash(password)
-    with db_cursor() as cur:
+    with db_session() as session:
         try:
-            user = accounts.create_user(cur, username, password_hash)
-            cur.connection.commit()
-        except psycopg2.IntegrityError:
-            cur.connection.rollback()
+            user = accounts.create_user(session, username, password_hash)
+            session.commit()
+        except IntegrityError:
+            session.rollback()
             return jsonify({"error": "Username already taken"}), 409
 
     token = create_token(cast("int", user["id"]))
@@ -54,8 +54,8 @@ def login() -> Response | tuple[Response, int]:
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
 
-    with db_cursor() as cur:
-        user = accounts.get_user_by_email(cur, username)
+    with db_session() as session:
+        user = accounts.get_user_by_email(session, username)
 
     if not user or not check_password_hash(
         cast("str", user["password_hash"]), password
@@ -69,8 +69,8 @@ def login() -> Response | tuple[Response, int]:
 @bp.route("/api/auth/me", methods=["GET"])
 @require_auth
 def get_me() -> Response | tuple[Response, int]:
-    with db_cursor() as cur:
-        user = accounts.get_user_by_id(cur, current_user_id())
+    with db_session() as session:
+        user = accounts.get_user_by_id(session, current_user_id())
     if not user:
         return jsonify({"error": "User not found"}), 404
     return jsonify(

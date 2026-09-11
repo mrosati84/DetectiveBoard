@@ -23,7 +23,7 @@ DetectiveBoard is a Flask web application for building interactive, investigator
 | --- | --- |
 | Application | Python 3.13, Flask, Jinja2 |
 | Client | Plain JavaScript, CSS, HTML, and SVG (no frontend build step) |
-| Database | PostgreSQL 16 and `psycopg2` |
+| Database | PostgreSQL 16 with SQLAlchemy 2.0 (ORM models + Core, `psycopg2` driver) |
 | Schema migrations | Alembic |
 | Authentication | Werkzeug password hashing and JWT (`PyJWT`) |
 | Configuration | `python-dotenv` |
@@ -43,11 +43,13 @@ The complete, locked dependency set is recorded in [`uv.lock`](uv.lock); direct 
 │   ├── __init__.py        # create_app() factory
 │   ├── config.py          # Environment-driven settings and constants
 │   ├── extensions.py      # Flask-Limiter singleton
-│   ├── db.py              # psycopg2 connections and ownership helpers
+│   ├── database.py        # SQLAlchemy engine, db_session(), row_to_dict()
+│   ├── models.py          # SQLAlchemy declarative models for the five tables
+│   ├── db.py              # Session-based ownership helpers
 │   ├── auth.py            # JWT, require_auth, and JSON body helper
 │   ├── errors.py          # 404/413/429 error handlers
 │   ├── blueprints/        # Thin HTTP route handlers
-│   └── services/          # SQL and business logic per resource
+│   └── services/          # SQLAlchemy Core queries and business logic per resource
 ├── tests/                 # pytest characterization suite
 │   ├── conftest.py        # Shared fixtures and app import
 │   └── test_contract.py   # HTTP contract tests
@@ -73,7 +75,7 @@ The complete, locked dependency set is recorded in [`uv.lock`](uv.lock); direct 
 └── entrypoint.sh          # Runs migrations, then starts Gunicorn
 ```
 
-The best starting points are [`detectiveboard/blueprints/`](detectiveboard/blueprints/) for server behavior and API routes, [`detectiveboard/services/`](detectiveboard/services/) for SQL and business logic, [`static/js/board.js`](static/js/board.js) for board interactions, and [`templates/index.html`](templates/index.html) with [`static/css/style.css`](static/css/style.css) for the board UI.
+The best starting points are [`detectiveboard/blueprints/`](detectiveboard/blueprints/) for server behavior and API routes, [`detectiveboard/services/`](detectiveboard/services/) for SQLAlchemy queries and business logic, [`static/js/board.js`](static/js/board.js) for board interactions, and [`templates/index.html`](templates/index.html) with [`static/css/style.css`](static/css/style.css) for the board UI.
 
 ## Local development
 

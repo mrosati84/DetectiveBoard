@@ -193,6 +193,7 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "pyjwt" },
     { name = "python-dotenv" },
+    { name = "sqlalchemy" },
 ]
 
 [package.dev-dependencies]
@@ -210,6 +211,7 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = ">=2.9" },
     { name = "pyjwt", specifier = ">=2.8" },
     { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
 ]
 
 [package.metadata.requires-dev]

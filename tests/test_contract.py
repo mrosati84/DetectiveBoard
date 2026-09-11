@@ -289,9 +289,7 @@ def test_rename_board_success(client: FlaskClient) -> None:
 
 def test_rename_nonexistent_board(client: FlaskClient) -> None:
     token, _ = _register(client)
-    resp = client.patch(
-        "/api/boards/999999", json={"name": "X"}, headers=_auth(token)
-    )
+    resp = client.patch("/api/boards/999999", json={"name": "X"}, headers=_auth(token))
     assert resp.status_code == 404
     assert _json(resp) == {"error": "Board not found"}
 

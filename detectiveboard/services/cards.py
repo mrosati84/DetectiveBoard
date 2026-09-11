@@ -1,19 +1,45 @@
 """Card persistence."""
 
-import psycopg2.extras
+from sqlalchemy import delete, insert, update
+from sqlalchemy.orm import Session
 
+from detectiveboard.database import row_to_dict
 from detectiveboard.db import card_belongs_to_user
-from detectiveboard.services.columns import CARD_FIELDS, CARD_INSERT_COLUMNS
+from detectiveboard.models import Card
+
+# Returned/selected column order matches the previous raw-SQL CARD_FIELDS.
+CARD_RETURNING = (
+    Card.id,
+    Card.title,
+    Card.description,
+    Card.image_path,
+    Card.pos_x,
+    Card.pos_y,
+    Card.pin_position,
+    Card.inactive,
+    Card.color,
+)
+
+_UPDATABLE_CARD_FIELDS = frozenset(
+    {
+        "title",
+        "description",
+        "pos_x",
+        "pos_y",
+        "pin_position",
+        "inactive",
+        "color",
+        "image_path",
+    }
+)
 
 
-def card_is_owned(
-    cur: psycopg2.extras.RealDictCursor, card_id: int, user_id: int
-) -> bool:
-    return card_belongs_to_user(card_id, user_id, cur)
+def card_is_owned(session: Session, card_id: int, user_id: int) -> bool:
+    return card_belongs_to_user(session, card_id, user_id)
 
 
 def create_card(
-    cur: psycopg2.extras.RealDictCursor,
+    session: Session,
     board_id: int,
     title: str,
     description: str | None,
@@ -24,45 +50,51 @@ def create_card(
     color: str | None,
     image_path: str | None,
 ) -> dict[str, object]:
-    cur.execute(
-        f"""
-        INSERT INTO cards ({CARD_INSERT_COLUMNS})
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        RETURNING {CARD_FIELDS}
-        """,
-        (
-            board_id,
-            title,
-            description,
-            image_path,
-            pos_x,
-            pos_y,
-            pin_position,
-            inactive,
-            color,
-        ),
-    )
-    row = cur.fetchone()
-    assert row is not None
-    return dict(row)
+    row = session.execute(
+        insert(Card)
+        .values(
+            board_id=board_id,
+            title=title,
+            description=description,
+            image_path=image_path,
+            pos_x=pos_x,
+            pos_y=pos_y,
+            pin_position=pin_position,
+            inactive=inactive,
+            color=color,
+        )
+        .returning(*CARD_RETURNING)
+    ).one()
+    return row_to_dict(row)
 
 
 def update_card(
-    cur: psycopg2.extras.RealDictCursor,
+    session: Session,
     card_id: int,
     updates: dict[str, object],
 ) -> dict[str, object]:
-    fields = [f"{field} = %s" for field in updates]
-    values: list[object] = [*updates.values(), card_id]
-    cur.execute(
-        f"UPDATE cards SET {', '.join(fields)} WHERE id = %s "
-        + f"RETURNING {CARD_FIELDS}",
-        values,
-    )
-    row = cur.fetchone()
-    assert row is not None
-    return dict(row)
+    clean = {
+        key: value for key, value in updates.items() if key in _UPDATABLE_CARD_FIELDS
+    }
+    if not clean:
+        raise ValueError("Nothing to update")
+    row = session.execute(
+        update(Card)
+        .where(Card.id == card_id)
+        .values(**clean)
+        .returning(*CARD_RETURNING)
+    ).one()
+    return row_to_dict(row)
 
 
-def delete_card(cur: psycopg2.extras.RealDictCursor, card_id: int) -> None:
-    cur.execute("DELETE FROM cards WHERE id = %s", (card_id,))
+def delete_card(session: Session, card_id: int) -> None:
+    _ = session.execute(delete(Card).where(Card.id == card_id))
+
+
+__all__ = [
+    "CARD_RETURNING",
+    "card_is_owned",
+    "create_card",
+    "delete_card",
+    "update_card",
+]

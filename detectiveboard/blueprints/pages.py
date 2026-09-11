@@ -3,7 +3,7 @@
 from flask import Blueprint, Response, jsonify, render_template, send_from_directory
 
 from detectiveboard.config import BASE_DIR
-from detectiveboard.db import db_cursor
+from detectiveboard.database import db_session
 from detectiveboard.services import share as share_service
 
 bp = Blueprint("pages", __name__)
@@ -31,8 +31,8 @@ def board() -> str:
 
 @bp.route("/share/<token>")
 def share_board(token: str) -> str | tuple[str, int]:
-    with db_cursor() as cur:
-        board_id = share_service.get_board_id_by_share_token(cur, token)
+    with db_session() as session:
+        board_id = share_service.get_board_id_by_share_token(session, token)
     if board_id is None:
         return (
             render_template(

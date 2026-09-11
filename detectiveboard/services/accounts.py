@@ -1,35 +1,32 @@
 """Account persistence for register/login/me."""
 
-import psycopg2.extras
+from sqlalchemy import insert, select
+from sqlalchemy.orm import Session
+
+from detectiveboard.database import row_to_dict
+from detectiveboard.models import User
 
 
-def create_user(
-    cur: psycopg2.extras.RealDictCursor, email: str, password_hash: str
-) -> dict[str, object]:
-    cur.execute(
-        "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id, email",
-        (email, password_hash),
-    )
-    row = cur.fetchone()
-    assert row is not None
-    return dict(row)
+def create_user(session: Session, email: str, password_hash: str) -> dict[str, object]:
+    row = session.execute(
+        insert(User)
+        .values(email=email, password_hash=password_hash)
+        .returning(User.id, User.email)
+    ).one()
+    return row_to_dict(row)
 
 
-def get_user_by_email(
-    cur: psycopg2.extras.RealDictCursor, email: str
-) -> dict[str, object] | None:
-    cur.execute("SELECT id, email, password_hash FROM users WHERE email = %s", (email,))
-    row = cur.fetchone()
+def get_user_by_email(session: Session, email: str) -> dict[str, object] | None:
+    row = session.execute(
+        select(User.id, User.email, User.password_hash).where(User.email == email)
+    ).first()
     if row is None:
         return None
-    return dict(row)
+    return row_to_dict(row)
 
 
-def get_user_by_id(
-    cur: psycopg2.extras.RealDictCursor, user_id: int
-) -> dict[str, object] | None:
-    cur.execute("SELECT id, email FROM users WHERE id = %s", (user_id,))
-    row = cur.fetchone()
+def get_user_by_id(session: Session, user_id: int) -> dict[str, object] | None:
+    row = session.execute(select(User.id, User.email).where(User.id == user_id)).first()
     if row is None:
         return None
-    return dict(row)
+    return row_to_dict(row)

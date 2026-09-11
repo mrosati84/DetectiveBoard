@@ -12,6 +12,7 @@ dependencies = [
     "PyJWT>=2.8",
     "gunicorn>=23.0",
     "flask-limiter>=3.5",
+    "sqlalchemy>=2.0,<2.1",
 ]
 
 [dependency-groups]

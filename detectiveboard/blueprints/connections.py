@@ -2,11 +2,11 @@
 
 from typing import cast
 
-import psycopg2
 from flask import Blueprint, Response, jsonify
+from sqlalchemy.exc import IntegrityError
 
 from detectiveboard.auth import current_user_id, json_body, require_auth
-from detectiveboard.db import db_cursor
+from detectiveboard.database import db_session
 from detectiveboard.services import connections as connections_service
 
 bp = Blueprint("connections", __name__)
@@ -23,15 +23,17 @@ def create_connection() -> Response | tuple[Response, int]:
     if id1 > id2:
         id1, id2 = id2, id1
 
-    with db_cursor() as cur:
-        if not connections_service.both_cards_owned(cur, current_user_id(), id1, id2):
+    with db_session() as session:
+        if not connections_service.both_cards_owned(
+            session, current_user_id(), id1, id2
+        ):
             return jsonify({"error": "Card not found"}), 404
 
         try:
-            connection = connections_service.create_connection(cur, id1, id2)
-            cur.connection.commit()
-        except psycopg2.IntegrityError:
-            cur.connection.rollback()
+            connection = connections_service.create_connection(session, id1, id2)
+            session.commit()
+        except IntegrityError:
+            session.rollback()
             return jsonify({"error": "Connection already exists"}), 409
     return jsonify(connection), 201
 
@@ -45,10 +47,12 @@ def delete_connection() -> Response | tuple[Response, int]:
     if id1 > id2:
         id1, id2 = id2, id1
 
-    with db_cursor() as cur:
-        if not connections_service.both_cards_owned(cur, current_user_id(), id1, id2):
+    with db_session() as session:
+        if not connections_service.both_cards_owned(
+            session, current_user_id(), id1, id2
+        ):
             return jsonify({"error": "Card not found"}), 404
 
-        connections_service.delete_connection(cur, id1, id2)
-        cur.connection.commit()
+        connections_service.delete_connection(session, id1, id2)
+        session.commit()
     return jsonify({"success": True})

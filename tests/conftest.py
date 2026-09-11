@@ -42,9 +42,7 @@ def _ensure_test_database() -> None:
     conn.autocommit = True
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                "SELECT 1 FROM pg_database WHERE datname=%s", (TEST_DATABASE,)
-            )
+            cur.execute("SELECT 1 FROM pg_database WHERE datname=%s", (TEST_DATABASE,))
             if cur.fetchone() is None:
                 cur.execute(f'CREATE DATABASE "{TEST_DATABASE}"')
     finally:

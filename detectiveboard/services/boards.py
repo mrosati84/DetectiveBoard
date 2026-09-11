@@ -1,96 +1,90 @@
 """Board persistence and board payload assembly."""
 
-import psycopg2.extras
+from sqlalchemy import delete, insert, select, update
+from sqlalchemy.orm import Session, aliased
 
+from detectiveboard.database import row_to_dict
 from detectiveboard.db import board_belongs_to_user
-from detectiveboard.services.columns import CARD_FIELDS, NOTE_FIELDS
+from detectiveboard.models import Board, Card, Connection, Note
+from detectiveboard.services.cards import CARD_RETURNING
+from detectiveboard.services.notes import NOTE_RETURNING
 
 
-def board_is_owned(
-    cur: psycopg2.extras.RealDictCursor, board_id: int, user_id: int
-) -> bool:
-    return board_belongs_to_user(board_id, user_id, cur)
+def board_is_owned(session: Session, board_id: int, user_id: int) -> bool:
+    return board_belongs_to_user(session, board_id, user_id)
 
 
-def list_boards(
-    cur: psycopg2.extras.RealDictCursor, user_id: int
-) -> list[dict[str, object]]:
-    cur.execute(
-        "SELECT id, name, created_at FROM boards WHERE user_id = %s ORDER BY created_at DESC",
-        (user_id,),
-    )
-    return [dict(b) for b in cur.fetchall()]
+def list_boards(session: Session, user_id: int) -> list[dict[str, object]]:
+    rows = session.execute(
+        select(Board.id, Board.name, Board.created_at)
+        .where(Board.user_id == user_id)
+        .order_by(Board.created_at.desc())
+    ).all()
+    return [row_to_dict(row) for row in rows]
 
 
-def create_board(
-    cur: psycopg2.extras.RealDictCursor, user_id: int, name: str
-) -> dict[str, object]:
-    cur.execute(
-        "INSERT INTO boards (name, user_id) VALUES (%s, %s) RETURNING id, name, created_at",
-        (name, user_id),
-    )
-    row = cur.fetchone()
-    assert row is not None
-    return dict(row)
+def create_board(session: Session, user_id: int, name: str) -> dict[str, object]:
+    row = session.execute(
+        insert(Board)
+        .values(name=name, user_id=user_id)
+        .returning(Board.id, Board.name, Board.created_at)
+    ).one()
+    return row_to_dict(row)
 
 
-def board_contents(
-    cur: psycopg2.extras.RealDictCursor, board_id: int
-) -> dict[str, object]:
-    cur.execute(
-        f"SELECT {CARD_FIELDS} FROM cards WHERE board_id = %s",
-        (board_id,),
-    )
-    cards = [dict(c) for c in cur.fetchall()]
-    cur.execute(
-        """
-        SELECT cn.id, cn.card_id_1, cn.card_id_2
-        FROM connections cn
-        JOIN cards c1 ON c1.id = cn.card_id_1
-        JOIN cards c2 ON c2.id = cn.card_id_2
-        WHERE c1.board_id = %s AND c2.board_id = %s
-        """,
-        (board_id, board_id),
-    )
-    connections = [dict(c) for c in cur.fetchall()]
-    cur.execute(
-        f"SELECT {NOTE_FIELDS} FROM notes WHERE board_id = %s",
-        (board_id,),
-    )
-    notes = [dict(n) for n in cur.fetchall()]
+def board_contents(session: Session, board_id: int) -> dict[str, object]:
+    card_rows = session.execute(
+        select(*CARD_RETURNING).where(Card.board_id == board_id)
+    ).all()
+    cards = [row_to_dict(row) for row in card_rows]
+
+    card_1 = aliased(Card)
+    card_2 = aliased(Card)
+    connection_rows = session.execute(
+        select(Connection.id, Connection.card_id_1, Connection.card_id_2)
+        .select_from(Connection)
+        .join(card_1, card_1.id == Connection.card_id_1)
+        .join(card_2, card_2.id == Connection.card_id_2)
+        .where(card_1.board_id == board_id, card_2.board_id == board_id)
+    ).all()
+    connections = [row_to_dict(row) for row in connection_rows]
+
+    note_rows = session.execute(
+        select(*NOTE_RETURNING).where(Note.board_id == board_id)
+    ).all()
+    notes = [row_to_dict(row) for row in note_rows]
+
     return {"cards": cards, "connections": connections, "notes": notes}
 
 
 def get_board(
-    cur: psycopg2.extras.RealDictCursor, board_id: int, user_id: int
+    session: Session, board_id: int, user_id: int
 ) -> dict[str, object] | None:
-    cur.execute(
-        "SELECT id, name, share_token FROM boards WHERE id = %s AND user_id = %s",
-        (board_id, user_id),
-    )
-    board = cur.fetchone()
-    if board is None:
+    row = session.execute(
+        select(Board.id, Board.name, Board.share_token).where(
+            Board.id == board_id, Board.user_id == user_id
+        )
+    ).first()
+    if row is None:
         return None
-    return {"board": dict(board), **board_contents(cur, board_id)}
+    return {"board": row_to_dict(row), **board_contents(session, board_id)}
 
 
 def rename_board(
-    cur: psycopg2.extras.RealDictCursor, board_id: int, user_id: int, name: str
+    session: Session, board_id: int, user_id: int, name: str
 ) -> dict[str, object] | None:
-    cur.execute(
-        "UPDATE boards SET name = %s WHERE id = %s AND user_id = %s RETURNING id, name",
-        (name, board_id, user_id),
-    )
-    board = cur.fetchone()
-    if board is None:
+    row = session.execute(
+        update(Board)
+        .where(Board.id == board_id, Board.user_id == user_id)
+        .values(name=name)
+        .returning(Board.id, Board.name)
+    ).first()
+    if row is None:
         return None
-    return dict(board)
+    return row_to_dict(row)
 
 
-def delete_board(
-    cur: psycopg2.extras.RealDictCursor, board_id: int, user_id: int
-) -> None:
-    cur.execute(
-        "DELETE FROM boards WHERE id = %s AND user_id = %s",
-        (board_id, user_id),
+def delete_board(session: Session, board_id: int, user_id: int) -> None:
+    _ = session.execute(
+        delete(Board).where(Board.id == board_id, Board.user_id == user_id)
     )
