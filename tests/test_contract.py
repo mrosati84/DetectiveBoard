@@ -705,10 +705,15 @@ _EXPECTED_ROUTES: set[tuple[tuple[str, ...], str]] = {
     (("DELETE", "OPTIONS"), "/api/notes/<int:note_id>"),
     (("OPTIONS", "PUT"), "/api/notes/<int:note_id>"),
     (("GET", "HEAD", "OPTIONS"), "/api/share/<token>"),
+    (("GET", "HEAD", "OPTIONS"), "/apple-touch-icon.png"),
     (("GET", "HEAD", "OPTIONS"), "/assets/<path:filename>"),
     (("GET", "HEAD", "OPTIONS"), "/board"),
+    (("GET", "HEAD", "OPTIONS"), "/favicon.ico"),
     (("GET", "HEAD", "OPTIONS"), "/health"),
+    (("GET", "HEAD", "OPTIONS"), "/robots.txt"),
     (("GET", "HEAD", "OPTIONS"), "/share/<token>"),
+    (("GET", "HEAD", "OPTIONS"), "/site.webmanifest"),
+    (("GET", "HEAD", "OPTIONS"), "/sitemap.xml"),
     (("GET", "HEAD", "OPTIONS"), "/static/<path:filename>"),
 }
 

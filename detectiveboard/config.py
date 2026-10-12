@@ -12,6 +12,7 @@ MAX_MULTIPART_OVERHEAD_BYTES = 64 * 1024
 UPLOAD_TOO_LARGE_MESSAGE = "File too large. Maximum image size is 1 MB."
 TOKEN_EXPIRY_DAYS = 30
 ALLOWED_CARD_COLORS: set[str] = {"#f5e6c8", "#f5d0c8", "#d5e8d0", "#2a1e14"}
+DEFAULT_SITE_URL = "https://detectiveboard.it.com"
 
 
 def load_config(app: Flask) -> None:
@@ -28,6 +29,8 @@ def load_config(app: Flask) -> None:
     app.config["RATELIMIT_STORAGE_URI"] = os.getenv(
         "RATE_LIMIT_STORAGE_URI", "memory://"
     )
+    # Canonical public origin used for SEO tags, sitemap and robots.txt.
+    app.config["SITE_URL"] = (os.getenv("SITE_URL") or DEFAULT_SITE_URL).rstrip("/")
     app.config["UPLOAD_FOLDER"] = os.environ.get("UPLOAD_FOLDER") or os.path.join(
         str(app.static_folder), "uploads"
     )

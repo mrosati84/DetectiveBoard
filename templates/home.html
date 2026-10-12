@@ -2,8 +2,55 @@
 
 {% block title %}DetectiveBoard — Organize your investigation{% endblock %}
 
+{% block meta_description %}DetectiveBoard is a free, detective-style cork board for suspects, clues and connections. Pin evidence cards, draw red yarn between them and solve the mystery.{% endblock %}
+
+{% block meta_robots %}index, follow, max-image-preview:large{% endblock %}
+
+{% block canonical %}<link rel="canonical" href="{{ site_url }}/">{% endblock %}
+
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "{{ site_url }}/#website",
+      "name": "DetectiveBoard",
+      "alternateName": ["Detective Board", "detectiveboard.it.com"],
+      "url": "{{ site_url }}/",
+      "inLanguage": "en",
+      "publisher": { "@id": "{{ site_url }}/#organization" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "{{ site_url }}/#organization",
+      "name": "DetectiveBoard",
+      "url": "{{ site_url }}/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ site_url }}/static/img/icon-512.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "WebApplication",
+      "@id": "{{ site_url }}/#app",
+      "name": "DetectiveBoard",
+      "url": "{{ site_url }}/",
+      "description": {{ self.meta_description() | tojson }},
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "image": "{{ site_url }}/static/img/og-image.jpg",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+      "publisher": { "@id": "{{ site_url }}/#organization" }
+    }
+  ]
+}
+</script>
 {% endblock %}
 
 {% block body_class %}home-page{% endblock %}
