@@ -6,6 +6,7 @@ import os
 from typing import cast
 
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from detectiveboard.blueprints.auth import bp as auth_blueprint
 from detectiveboard.blueprints.boards import bp as boards_blueprint
@@ -27,6 +28,9 @@ def create_app() -> Flask:
         static_folder=str(BASE_DIR / "static"),
         template_folder=str(BASE_DIR / "templates"),
     )
+    # Railway's edge proxy rewrites Host; trust its X-Forwarded-Host/-Proto so
+    # request.host and request.scheme reflect what the client asked for.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     load_config(app)
     limiter.init_app(app)
     os.makedirs(cast("str", app.config["UPLOAD_FOLDER"]), exist_ok=True)

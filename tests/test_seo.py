@@ -88,6 +88,16 @@ def test_www_post_redirect_preserves_method(client: FlaskClient) -> None:
     assert resp.headers["Location"] == "https://example.com/api/boards"
 
 
+def test_www_forwarded_host_redirects_to_apex(client: FlaskClient) -> None:
+    resp = client.get(
+        "/",
+        base_url="http://internal.example.net",
+        headers={"X-Forwarded-Host": "www.example.com"},
+    )
+    assert resp.status_code == 301
+    assert resp.headers["Location"] == "https://example.com/"
+
+
 def test_apex_host_is_not_redirected(client: FlaskClient) -> None:
     resp = client.get("/health", base_url="http://example.com")
     assert resp.status_code == 200
