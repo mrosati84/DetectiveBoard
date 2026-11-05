@@ -23,6 +23,33 @@ uv run alembic upgrade head
 uv run alembic revision --autogenerate -m "description"
 ```
 
+## Branching
+
+Always work on a branch — **never commit directly to `main`**.
+
+Branch names **must** follow the format `<what>/<topic>`:
+
+- **`<what>`**: the kind of work — e.g. `feature`, `fix`, `chore`, `refactor`, `docs`, `test`.
+- **`<topic>`**: a lowercase, hyphen-separated slug describing what the branch is about.
+
+Examples: `feature/card-image-upload`, `fix/duplicate-connections`, `chore/update-dependencies`.
+
+## Commit Messages
+
+Every commit message **must** follow the format `<action>(<what>): <message>`:
+
+- **`<action>`**: lowercase verb describing the kind of change — `add`, `fix`, `update`, `remove`, `refactor`, `docs`, `test`, `chore`.
+- **`<what>`**: the affected area, file, or module (e.g. `cards`, `auth`, `models.py`, `static/js`, `migrations`).
+- **`<message>`**: short imperative summary, lowercase, no trailing period.
+
+Examples:
+
+```
+add(agents.md): add AGENTS.md file based on CLAUDE.md
+fix(connections): prevent duplicate yarn between the same cards
+refactor(services): move board queries out of blueprints
+```
+
 ## Project Overview
 
 DetectiveBoard is a local-only Flask web app that renders an interactive cork board where users can pin cards and connect them with red yarn (investigator-style). It is **not collaborative** and requires no authentication.
