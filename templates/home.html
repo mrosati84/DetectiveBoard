@@ -61,75 +61,143 @@
 
 {% block content %}
 <!-- Header -->
-<header id="auth-header">
-    <a id="auth-logo" href="/">&#128269; DetectiveBoard</a>
+<header id="auth-header" class="home-header">
+    <a id="auth-logo" href="/">
+        <img src="/assets/detectiveboard-logo.svg" alt="" width="28" height="28" class="home-logo-img">
+        <span>DetectiveBoard</span>
+    </a>
     <div id="auth-controls">
         <div id="auth-logged-out" style="display:flex;">
-            <button class="auth-btn" onclick="openRegisterModal()">Sign up</button>
-            <button class="auth-btn auth-btn-primary" onclick="openLoginModal()">Log in</button>
+            <button class="auth-btn" onclick="openLoginModal()">Log in</button>
+            <button class="auth-btn auth-btn-primary" onclick="openRegisterModal()"
+                data-goatcounter-click="cta-header" data-goatcounter-title="CTA: header sign up">Sign up</button>
         </div>
     </div>
 </header>
 
+<main>
+
 <!-- Hero -->
 <section id="hero">
-    <div id="hero-overlay">
+    <div class="home-container hero-grid">
         <div id="hero-content">
-            <p id="hero-eyebrow">&#128100; Case File #001</p>
-            <h1 id="hero-title">Organize your<br>investigation</h1>
+            <p class="section-eyebrow">Case file #001</p>
+            <h1 id="hero-title">Connect the dots.</h1>
             <p id="hero-subtitle">
-                A detective-style cork board for suspects, clues and connections.<br>
-                Pin cards. Draw red yarn. Solve the mystery.
+                Pin suspects, clues and leads to a cork board, then tie them together with red yarn.
+                A free, visual way to untangle any mystery &mdash; real, fictional or your own.
             </p>
             <div id="hero-actions">
-                <button class="hero-btn hero-btn-primary" onclick="openRegisterModal()">Start investigating</button>
-                <button class="hero-btn hero-btn-ghost" onclick="openLoginModal()">Log in</button>
+                <button class="hero-btn hero-btn-primary" onclick="openRegisterModal()"
+                    data-goatcounter-click="cta-hero" data-goatcounter-title="CTA: hero">Open your first case</button>
+                <button class="hero-link" onclick="openLoginModal()">Log in</button>
+            </div>
+            <p class="hero-reassure">Free &middot; No ads &middot; No cookies</p>
+        </div>
+
+        <div id="demo-board" aria-hidden="true">
+            <svg id="demo-yarn" xmlns="http://www.w3.org/2000/svg"></svg>
+            <div class="demo-card" data-node="suspect" style="--x:5%; --y:7%; --r:-3deg; --d:0ms;">
+                <span class="demo-pin"></span>
+                <div class="demo-photo demo-photo-suspect"></div>
+                <p class="demo-title">The Butler</p>
+                <p class="demo-desc">Alibi: &ldquo;polishing silver&rdquo;</p>
+            </div>
+            <div class="demo-card" data-node="clue" style="--x:62%; --y:5%; --r:2.5deg; --d:180ms;">
+                <span class="demo-pin"></span>
+                <div class="demo-photo demo-photo-key"></div>
+                <p class="demo-title">Missing key</p>
+                <p class="demo-desc">Found under the rug</p>
+            </div>
+            <div class="demo-card" data-node="place" style="--x:50%; --y:60%; --r:-1.5deg; --d:360ms;">
+                <span class="demo-pin pin-left"></span>
+                <p class="demo-title">Library, 9:40&nbsp;pm</p>
+                <p class="demo-desc">Clock stopped. Window ajar.</p>
+            </div>
+            <div class="demo-note" data-node="note" style="--x:10%; --y:68%; --r:-4deg; --d:540ms;">
+                <span class="demo-pin"></span>
+                who had<br>the key??
             </div>
         </div>
     </div>
 </section>
 
+<!-- Who it's for -->
+<section id="audience" class="paper-section">
+    <div class="home-container">
+        <p class="section-eyebrow">Persons of interest</p>
+        <h2 class="section-heading">Made for anyone with a mystery to untangle</h2>
+        <ul id="audience-grid">
+            <li class="audience-item">
+                <span class="audience-icon" aria-hidden="true">&#128269;</span>
+                <h3>True crime fans</h3>
+                <p>Map the suspects, timelines and theories from the case you can&rsquo;t stop thinking about.</p>
+            </li>
+            <li class="audience-item">
+                <span class="audience-icon" aria-hidden="true">&#9997;&#65039;</span>
+                <h3>Writers</h3>
+                <p>Plot twists, character arcs and red herrings &mdash; see how your story fits together.</p>
+            </li>
+            <li class="audience-item">
+                <span class="audience-icon" aria-hidden="true">&#127922;</span>
+                <h3>Game masters</h3>
+                <p>Keep NPCs, factions and secrets straight across every session of your campaign.</p>
+            </li>
+            <li class="audience-item">
+                <span class="audience-icon" aria-hidden="true">&#128218;</span>
+                <h3>Students</h3>
+                <p>Turn a messy topic into a visual map of people, events and causes.</p>
+            </li>
+        </ul>
+    </div>
+</section>
+
 <!-- Features -->
-<section id="features">
+<section id="features" class="cork-section">
     <div class="home-container">
         <p class="section-eyebrow">Evidence files</p>
         <h2 class="section-heading">Everything you need to crack the case</h2>
         <div id="features-grid">
 
-            <article class="feature-card">
-                <div class="feature-img-wrap">
-                    <span class="feature-pin"></span>
-                    <img src="/assets/homepage/board.jpg" alt="Cork board overview with cards and connections"
-                        class="feature-img">
-                </div>
+            <article class="feature">
+                <figure class="polaroid" style="--r:-2deg;">
+                    <span class="polaroid-pin"></span>
+                    <img src="/assets/homepage/feature-board.jpg" alt="A cork board with evidence cards connected by red yarn"
+                        loading="lazy" width="1200" height="800">
+                    <figcaption>the board</figcaption>
+                </figure>
                 <div class="feature-text">
-                    <h3 class="feature-title">&#128204; The Cork Board</h3>
-                    <p class="feature-desc">Your infinite investigation surface. Drag cards anywhere, zoom for detail,
-                        pan freely. Red yarn sags under gravity — just like the real thing.</p>
+                    <h3>Red yarn that behaves like yarn</h3>
+                    <p>Drag cards anywhere on an infinite cork surface, zoom and pan freely. Connections sag
+                        under gravity, just like the real thing.</p>
                 </div>
             </article>
 
-            <article class="feature-card">
-                <div class="feature-img-wrap">
-                    <span class="feature-pin"></span>
-                    <img src="/assets/homepage/new-card.jpg" alt="Creating a new evidence card" class="feature-img">
-                </div>
+            <article class="feature">
+                <figure class="polaroid" style="--r:1.5deg;">
+                    <span class="polaroid-pin"></span>
+                    <img src="/assets/homepage/feature-card.jpg" alt="Editing an evidence card with a title, notes and a photo"
+                        loading="lazy" width="1200" height="800">
+                    <figcaption>exhibit A</figcaption>
+                </figure>
                 <div class="feature-text">
-                    <h3 class="feature-title">&#128247; Suspect Cards</h3>
-                    <p class="feature-desc">A card for every suspect, clue or lead. Add a title, notes, and a photo.
-                        Connect two cards with red yarn to map their relationship.</p>
+                    <h3>Cards, photos and sticky notes</h3>
+                    <p>A card for every suspect, clue or lead &mdash; with a title, notes and a photo. Drop
+                        sticky notes for quick hunches.</p>
                 </div>
             </article>
 
-            <article class="feature-card">
-                <div class="feature-img-wrap">
-                    <span class="feature-pin"></span>
-                    <img src="/assets/homepage/edit-card.jpg" alt="Editing card evidence details" class="feature-img">
-                </div>
+            <article class="feature">
+                <figure class="polaroid" style="--r:-1deg;">
+                    <span class="polaroid-pin"></span>
+                    <img src="/assets/homepage/feature-share.jpg" alt="A board opened from a read-only share link"
+                        loading="lazy" width="1200" height="800">
+                    <figcaption>for your eyes only</figcaption>
+                </figure>
                 <div class="feature-text">
-                    <h3 class="feature-title">&#128203; Evidence Details</h3>
-                    <p class="feature-desc">Double-click any card to open the evidence panel. Edit title, description,
-                        image and pin position. Sticky notes for quick thoughts.</p>
+                    <h3>Share with a link</h3>
+                    <p>Send a read-only link to your board so others can follow your reasoning. Turn it off
+                        whenever you like.</p>
                 </div>
             </article>
 
@@ -138,55 +206,78 @@
 </section>
 
 <!-- How it works -->
-<section id="howto">
+<section id="howto" class="paper-section">
     <div class="home-container">
-        <p class="section-eyebrow">Field Manual</p>
-        <h2 class="section-heading">How it works</h2>
+        <p class="section-eyebrow">Field manual</p>
+        <h2 class="section-heading">Up and running in a minute</h2>
         <ol id="steps-list">
             <li class="step-item">
-                <span class="step-num">01</span>
-                <h3 class="step-title">Sign up</h3>
-                <p class="step-desc">Create your account in seconds. Completely free, no tracking.</p>
+                <span class="step-num">1</span>
+                <h3>Open a case</h3>
+                <p>Sign up with a username and password &mdash; that&rsquo;s it. Then create your first board.</p>
             </li>
-            <li class="step-sep" aria-hidden="true">&#8594;</li>
             <li class="step-item">
-                <span class="step-num">02</span>
-                <h3 class="step-title">Open a board</h3>
-                <p class="step-desc">Create a new case board or load a saved investigation from the side menu.</p>
+                <span class="step-num">2</span>
+                <h3>Pin the evidence</h3>
+                <p>Add cards and sticky notes and drag them around until the picture makes sense.</p>
             </li>
-            <li class="step-sep" aria-hidden="true">&#8594;</li>
             <li class="step-item">
-                <span class="step-num">03</span>
-                <h3 class="step-title">Pin your evidence</h3>
-                <p class="step-desc">Add cards and sticky notes, then drag them across the cork surface to organize.</p>
-            </li>
-            <li class="step-sep" aria-hidden="true">&#8594;</li>
-            <li class="step-item">
-                <span class="step-num">04</span>
-                <h3 class="step-title">Connect the dots</h3>
-                <p class="step-desc">Select two cards and draw a red yarn connection to visualize relationships.</p>
+                <span class="step-num">3</span>
+                <h3>Connect the dots</h3>
+                <p>Select two cards and tie them with red yarn. Watch the pattern emerge.</p>
             </li>
         </ol>
     </div>
 </section>
 
-<!-- CTA -->
-<section id="cta-section">
-    <div id="cta-overlay">
-        <div id="cta-content">
-            <p class="cta-stamp">CONFIDENTIAL</p>
-            <h2 id="cta-title">Ready to open the case?</h2>
-            <p id="cta-subtitle">Your first investigation board is one click away.</p>
-            <button class="hero-btn hero-btn-primary" onclick="openRegisterModal()">Sign up — it's free</button>
+<!-- FAQ -->
+<section id="faq" class="paper-section paper-section-alt">
+    <div class="home-container home-container-narrow">
+        <p class="section-eyebrow">Interrogation room</p>
+        <h2 class="section-heading">Questions, answered</h2>
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary>Is it really free?</summary>
+                <p>Yes. DetectiveBoard is free to use, with no ads and no premium tier.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What about my privacy?</summary>
+                <p>Your boards are private to your account. We don&rsquo;t use cookies or ads; we only keep
+                    anonymous, aggregate visit counts so we know the site is being used.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Can other people see my boards?</summary>
+                <p>Only if you share one. Sharing creates a read-only link that you can disable at any time.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Does it work on my phone?</summary>
+                <p>DetectiveBoard runs in any modern browser, though a bigger screen gives your investigation
+                    more room to breathe.</p>
+            </details>
         </div>
     </div>
 </section>
 
+<!-- CTA -->
+<section id="cta-section" class="cork-section">
+    <div id="cta-content" class="paper-sheet">
+        <span class="polaroid-pin"></span>
+        <p class="cta-stamp">Confidential</p>
+        <h2 id="cta-title">Ready to open the case?</h2>
+        <p id="cta-subtitle">Your first board is one click away.</p>
+        <button class="hero-btn hero-btn-primary" onclick="openRegisterModal()"
+            data-goatcounter-click="cta-footer" data-goatcounter-title="CTA: final">Open your first case</button>
+        <p class="hero-reassure">Free &middot; No ads &middot; No cookies</p>
+    </div>
+</section>
+
+</main>
+
 <!-- Footer -->
 <footer id="home-footer">
-    <span>&#128269; DetectiveBoard</span>
-    <span>Made with 🔍 in 🇮🇹</span>
-    <span>Free &amp; no tracking</span>
+    <span>DetectiveBoard</span>
+    <span>Made with &#128269; in &#127470;&#127481;</span>
+    <span>Free &middot; No ads &middot; No cookies</span>
 </footer>
 
 <!-- MODALS -->
