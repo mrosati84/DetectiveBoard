@@ -1,0 +1,169 @@
+{% extends 'content/_layout.html' %}
+
+{% block title %}How to Make a Detective Board (Cork Board or Online) | DetectiveBoard{% endblock %}
+
+{% block meta_description %}Learn how to make a detective board step by step: what you need, how to pin evidence and run red string on a cork board, and how to build one online for free.{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "@id": "{{ site_url }}{{ page.path }}#article",
+      "headline": "How to make a detective board",
+      "description": {{ self.meta_description() | tojson }},
+      "image": "{{ site_url }}/static/img/og-image.jpg",
+      "datePublished": "{{ page.published.isoformat() }}",
+      "dateModified": "{{ page.updated.isoformat() }}",
+      "inLanguage": "en",
+      "author": { "@type": "Organization", "name": "DetectiveBoard", "url": "{{ site_url }}/" },
+      "publisher": { "@id": "{{ site_url }}/#organization" },
+      "mainEntityOfPage": "{{ site_url }}{{ page.path }}",
+      "isPartOf": { "@id": "{{ site_url }}/#website" }
+    },
+    {% include 'partials/_breadcrumb_ld.html' %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block eyebrow %}Field manual{% endblock %}
+{% block heading %}How to make a detective board{% endblock %}
+{% block lead %}
+Everything you need to build a detective board &mdash; the classic cork board with push pins and red
+string, and the faster online version you can start in a minute.
+{% endblock %}
+{% block intro_extra %}
+<p class="article-meta">
+    By the DetectiveBoard team &middot; Updated
+    <time datetime="{{ page.updated.isoformat() }}">{{ page.updated.strftime('%B') }} {{ page.updated.day }}, {{ page.updated.year }}</time>
+</p>
+{% endblock %}
+
+{% block body %}
+<article class="paper-section">
+    <div class="home-container home-container-narrow prose">
+
+        <nav class="toc" aria-label="Contents">
+            <p>In this guide</p>
+            <ol>
+                <li><a href="#what-is">What is a detective board?</a></li>
+                <li><a href="#what-you-need">What you need</a></li>
+                <li><a href="#physical">How to make a physical detective board</a></li>
+                <li><a href="#online">How to make a detective board online</a></li>
+                <li><a href="#tips">Tips for a board that actually helps</a></li>
+                <li><a href="#compare">Cork board or online?</a></li>
+            </ol>
+        </nav>
+
+        <h2 id="what-is">What is a detective board?</h2>
+        <p>A detective board is a wall of evidence: photos, notes and documents pinned to a cork board and
+            linked with red string to show how they relate. Depending on who you ask it&rsquo;s an
+            investigation board, an evidence board, a suspect board, a crime board or &mdash; when the
+            string gets out of hand &mdash; a conspiracy board.</p>
+        <p>Whatever you call it, the idea is the same. Getting every piece of information out of your head
+            and onto one surface makes patterns visible: who knew whom, what happened when, and which
+            clue doesn&rsquo;t fit. It works just as well for a true crime case, a novel, a tabletop RPG
+            campaign or a history assignment as it does for a fictional detective.</p>
+
+        <h2 id="what-you-need">What you need</h2>
+        <p>For a physical detective board:</p>
+        <ul>
+            <li><strong>A cork board</strong> &mdash; at least 60 &times; 90&nbsp;cm (2 &times; 3&nbsp;ft).
+                Bigger is better; cases always grow.</li>
+            <li><strong>Push pins</strong> &mdash; map pins with round heads hold string best.</li>
+            <li><strong>Red string</strong> &mdash; red yarn, embroidery thread or baker&rsquo;s twine.
+                Anything thin and bright.</li>
+            <li><strong>Index cards and sticky notes</strong> for names, facts and hunches.</li>
+            <li><strong>Printed photos</strong> of people, places and objects.</li>
+            <li><strong>A marker and scissors.</strong></li>
+        </ul>
+        <p>For an online detective board you only need a browser &mdash;
+            <a href="{{ url_for('pages.home') }}">DetectiveBoard</a> is free and needs nothing more than a
+            username and password.</p>
+
+        <h2 id="physical">How to make a physical detective board</h2>
+        <ol>
+            <li><strong>Define the question.</strong> Write the mystery you&rsquo;re trying to solve on a card
+                and pin it at the top: &ldquo;Who took the key?&rdquo;, &ldquo;What happened on Route 9?&rdquo;,
+                &ldquo;Why does chapter 14 feel wrong?&rdquo;.</li>
+            <li><strong>Make a card for every person.</strong> Suspects, witnesses, victims, characters.
+                Add a photo if you have one, and a line or two on motive or role.</li>
+            <li><strong>Add the evidence.</strong> Objects, documents, places and events each get their own
+                card. Keep one fact per card so you can move them independently.</li>
+            <li><strong>Lay out a rough structure.</strong> People in the centre, evidence around them, or a
+                timeline running left to right along the bottom. Leave empty space &mdash; you&rsquo;ll need
+                it.</li>
+            <li><strong>Pin everything down.</strong> Put a pin through the top of each card, leaving a few
+                millimetres of the pin exposed so string can wrap around it.</li>
+            <li><strong>Run the red string.</strong> Tie the string to one pin, stretch it to the next and
+                wrap it twice around that pin. Each length of string is one claim: &ldquo;these two are
+                connected&rdquo;. Write why on a sticky note if it isn&rsquo;t obvious.</li>
+            <li><strong>Step back and look for patterns.</strong> Cards with many strings are central.
+                Cards with none are either irrelevant or the clue everyone missed.</li>
+        </ol>
+
+        <h2 id="online">How to make a detective board online</h2>
+        <p>A physical board looks great on camera, but it&rsquo;s hard to rearrange, impossible to take
+            with you and the string tangles the moment you move a card. An online detective board keeps
+            the cork, the pins and the red string, and drops the hassle.</p>
+        <ol>
+            <li><strong>Open a free board.</strong> <a href="{{ url_for('pages.home') }}">Sign up on
+                DetectiveBoard</a> with a username and password and create a new board.</li>
+            <li><strong>Add cards.</strong> Use the toolbar to add a card for each person, clue and place.
+                Give it a title, a description and, if you like, a photo.</li>
+            <li><strong>Drop sticky notes</strong> for hunches and open questions.</li>
+            <li><strong>Connect the dots.</strong> Select two cards and tie them with red string. The yarn
+                sags under gravity, just like the real thing &mdash; and it follows the cards when you
+                drag them.</li>
+            <li><strong>Rearrange freely.</strong> Zoom, pan and move cards around as your theory changes.
+                No pins to pull, no string to re-tie.</li>
+            <li><strong>Share or export.</strong> Send a read-only link so others can follow your reasoning,
+                or export the board as PNG, PDF or SVG.</li>
+        </ol>
+        <p>Need a head start? Our <a href="{{ url_for('content.detective_board_template') }}">detective
+            board templates</a> show what to pin for a murder mystery, a true crime case, a novel plot and
+            an RPG campaign.</p>
+
+        <h2 id="tips">Tips for a board that actually helps</h2>
+        <ul>
+            <li><strong>One question per board.</strong> If you&rsquo;re chasing two mysteries, make two boards.</li>
+            <li><strong>One fact per card.</strong> Combined facts can&rsquo;t be connected separately.</li>
+            <li><strong>Make every string mean something.</strong> If you can&rsquo;t say why two cards are
+                linked, don&rsquo;t link them.</li>
+            <li><strong>Write down your sources.</strong> Knowing where a fact came from tells you how much
+                to trust it.</li>
+            <li><strong>Prune regularly.</strong> Remove dead ends instead of letting them clutter the
+                board. A tidy evidence board thinks more clearly than a messy one.</li>
+        </ul>
+
+        <h2 id="compare">Cork board or online?</h2>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr><th scope="col"></th><th scope="col">Cork board</th><th scope="col">Online detective board</th></tr>
+                </thead>
+                <tbody>
+                    <tr><th scope="row">Cost</th><td>Board, pins, string, prints</td><td>Free</td></tr>
+                    <tr><th scope="row">Space</th><td>Limited by the wall</td><td>Infinite canvas</td></tr>
+                    <tr><th scope="row">Rearranging</th><td>Re-pin and re-tie by hand</td><td>Drag and drop; string follows</td></tr>
+                    <tr><th scope="row">Sharing</th><td>Take a photo</td><td>Read-only link or PNG/PDF/SVG export</td></tr>
+                    <tr><th scope="row">Atmosphere</th><td>Unbeatable</td><td>Pretty close</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>Plenty of people use both: an online board to work the case, and a printout pinned to the wall
+            for the satisfaction of it.</p>
+
+    </div>
+</article>
+{% endblock %}
+
+{% block cta %}
+{% set cta_title = 'Build your detective board now' %}
+{% set cta_subtitle = 'Cork, pins and red string included. No glue gun required.' %}
+{% set cta_event = 'cta-guide-final' %}
+{% include 'partials/_site_cta.html' %}
+{% endblock %}

@@ -14,6 +14,7 @@ from detectiveboard.blueprints.cards import bp as cards_blueprint
 from detectiveboard.blueprints.connections import (
     bp as connections_blueprint,
 )
+from detectiveboard.blueprints.content import bp as content_blueprint
 from detectiveboard.blueprints.notes import bp as notes_blueprint
 from detectiveboard.blueprints.pages import bp as pages_blueprint
 from detectiveboard.blueprints.share import bp as share_blueprint
@@ -36,6 +37,7 @@ def create_app() -> Flask:
     os.makedirs(cast("str", app.config["UPLOAD_FOLDER"]), exist_ok=True)
 
     app.register_blueprint(pages_blueprint)
+    app.register_blueprint(content_blueprint)
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(boards_blueprint)
     app.register_blueprint(cards_blueprint)

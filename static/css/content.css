@@ -1,0 +1,298 @@
+/* ============================================================
+   content pages — detective board templates and guides
+   Builds on home.css (palette, sections, demo boards, CTA).
+   ============================================================ */
+
+/* ---- Intro band ---- */
+
+.page-intro {
+    padding: 120px 0 64px;
+    background-color: #a8682f;
+    background-image:
+        linear-gradient(100deg, rgba(36, 16, 4, 0.92) 0%, rgba(36, 16, 4, 0.78) 60%, rgba(60, 28, 8, 0.45) 100%),
+        url('/assets/cork_background.jpg');
+    background-size: cover;
+    background-position: center;
+    color: var(--cream);
+}
+
+.page-intro .section-eyebrow {
+    color: #ff8a6a;
+}
+
+.page-title {
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: 1.1;
+    margin-bottom: 18px;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.45);
+}
+
+.page-lead {
+    font-size: 18px;
+    line-height: 1.7;
+    color: rgba(251, 241, 220, 0.92);
+    max-width: 40em;
+}
+
+.page-intro .hero-btn {
+    margin-top: 30px;
+}
+
+/* ---- Breadcrumbs ---- */
+
+.breadcrumbs {
+    margin-bottom: 28px;
+    font-size: 14px;
+}
+
+.breadcrumbs ol {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.breadcrumbs li + li::before {
+    content: '\203A';
+    margin-right: 6px;
+    opacity: 0.6;
+}
+
+.breadcrumbs a {
+    color: var(--cream);
+    opacity: 0.8;
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+.breadcrumbs [aria-current] {
+    opacity: 0.6;
+}
+
+/* ---- Shared links inside paper sections ---- */
+
+.content-page .paper-section a:not(.guide-card) {
+    color: var(--red);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.content-page .paper-section a:not(.guide-card):hover {
+    color: var(--red-hover);
+}
+
+/* ---- Template cases ---- */
+
+.template-case {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 56px;
+    align-items: center;
+}
+
+.template-case + .template-case {
+    margin-top: 96px;
+}
+
+.template-case:nth-of-type(even) .demo-board {
+    order: 2;
+    transform: rotate(-1deg);
+}
+
+.template-text h2 {
+    font-size: clamp(24px, 3vw, 32px);
+    line-height: 1.25;
+    margin-bottom: 14px;
+}
+
+.template-text p,
+.template-text li {
+    font-size: 15.5px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+}
+
+.template-text h3 {
+    font-size: 16px;
+    margin: 20px 0 8px;
+}
+
+.template-text ul {
+    padding-left: 20px;
+}
+
+.template-text .hero-btn {
+    margin-top: 26px;
+}
+
+.template-tip {
+    margin-top: 18px;
+    padding: 12px 16px;
+    background: #fff27a;
+    font-family: 'Caveat', cursive;
+    font-size: 21px !important;
+    line-height: 1.3 !important;
+    color: #3a2a00 !important;
+    box-shadow: 1px 3px 8px rgba(80, 45, 10, 0.18);
+    transform: rotate(-0.8deg);
+}
+
+/* ---- Prose (guides) ---- */
+
+.prose {
+    font-size: 17px;
+    line-height: 1.8;
+    color: var(--ink);
+}
+
+.prose > * + * {
+    margin-top: 1.1em;
+}
+
+.prose h2 {
+    font-size: clamp(24px, 3vw, 30px);
+    line-height: 1.3;
+    margin-top: 2.2em;
+}
+
+.prose h3 {
+    font-size: 19px;
+    margin-top: 1.6em;
+}
+
+.prose ul,
+.prose ol {
+    padding-left: 1.4em;
+}
+
+.prose li + li {
+    margin-top: 0.45em;
+}
+
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15.5px;
+    background: var(--card);
+    box-shadow: 0 2px 0 rgba(120, 80, 30, 0.12);
+}
+
+.prose th,
+.prose td {
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid rgba(120, 80, 30, 0.15);
+}
+
+.prose th {
+    background: var(--paper-alt);
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.toc {
+    background: var(--card);
+    border-left: 4px solid var(--red);
+    padding: 18px 24px;
+    font-size: 16px;
+}
+
+.toc p {
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.article-meta {
+    margin-top: 18px;
+    font-size: 14px;
+    color: rgba(251, 241, 220, 0.75);
+}
+
+/* ---- Guides index ---- */
+
+.guide-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px;
+}
+
+.guide-card {
+    display: block;
+    height: 100%;
+    background: var(--card);
+    border-radius: 4px;
+    padding: 28px 26px;
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: 0 2px 0 rgba(120, 80, 30, 0.12), 0 8px 24px rgba(80, 45, 10, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.guide-card:hover,
+.guide-card:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 2px 0 rgba(120, 80, 30, 0.12), 0 14px 30px rgba(80, 45, 10, 0.16);
+}
+
+.guide-card h2 {
+    font-size: 20px;
+    line-height: 1.3;
+    margin-bottom: 10px;
+}
+
+.guide-card p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+}
+
+.guide-card .guide-more {
+    margin-top: 14px;
+    color: var(--red);
+    font-weight: bold;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 980px) {
+    .template-case {
+        grid-template-columns: 1fr;
+        gap: 36px;
+    }
+
+    .template-case:nth-of-type(even) .demo-board {
+        order: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .page-intro {
+        padding: 96px 0 48px;
+    }
+
+    .page-lead {
+        font-size: 16.5px;
+    }
+
+    .template-case + .template-case {
+        margin-top: 64px;
+    }
+
+    .prose {
+        font-size: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .guide-card {
+        transition: none;
+    }
+}

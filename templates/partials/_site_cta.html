@@ -1,0 +1,13 @@
+{#- Final call to action. Set cta_title, cta_subtitle and cta_event before including. -#}
+<section id="cta-section" class="cork-section">
+    <div id="cta-content" class="paper-sheet">
+        <span class="polaroid-pin"></span>
+        <p class="cta-stamp">Confidential</p>
+        <h2 id="cta-title">{{ cta_title | default('Ready to open the case?') }}</h2>
+        <p id="cta-subtitle">{{ cta_subtitle | default('Your first detective board is one click away.') }}</p>
+        <button class="hero-btn hero-btn-primary" onclick="openRegisterModal()"
+            data-goatcounter-click="{{ cta_event | default('cta-footer') }}"
+            data-goatcounter-title="CTA: final">Open your first case</button>
+        <p class="hero-reassure">Free &middot; No ads &middot; No cookies</p>
+    </div>
+</section>

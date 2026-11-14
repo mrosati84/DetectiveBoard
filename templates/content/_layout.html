@@ -1,0 +1,25 @@
+{#- Layout for the templates landing page and guides: cork intro band + paper body. -#}
+{% extends 'site_base.html' %}
+
+{% block site_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
+{% block structured_data %}{% endblock %}
+{% endblock %}
+
+{% block page_class %}content-page{% endblock %}
+
+{% block main %}
+<section class="page-intro">
+    <div class="home-container">
+        {% include 'partials/_breadcrumbs.html' %}
+        <p class="section-eyebrow">{% block eyebrow %}{% endblock %}</p>
+        <h1 class="page-title">{% block heading %}{% endblock %}</h1>
+        <p class="page-lead">{% block lead %}{% endblock %}</p>
+        {% block intro_extra %}{% endblock %}
+    </div>
+</section>
+
+{% block body %}{% endblock %}
+
+{% block cta %}{% include 'partials/_site_cta.html' %}{% endblock %}
+{% endblock %}
