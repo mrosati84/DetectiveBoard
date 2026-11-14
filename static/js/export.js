@@ -110,16 +110,17 @@ async function onExportSubmit(e) {
     setExportBusy(true);
     let host = null;
     try {
+        if (!['png', 'pdf', 'svg'].includes(format)) throw new Error(`Unknown export format: ${format}`);
         const bounds = computeExportBounds();
-        const stage = buildExportStage(bounds, includeBg);
+        const plan = planRender(bounds, format !== 'svg');
+        const stage = buildExportStage(bounds, includeBg, plan.domScale);
         host = mountOffscreen(stage);
         await prepareExportStage(stage);
 
         const filename = `${slugify(currentBoardName)}-${todayStamp()}.${format}`;
-        if (format === 'png') await exportPng(stage, bounds, filename);
-        else if (format === 'pdf') await exportPdf(stage, bounds, filename);
-        else if (format === 'svg') await exportSvg(stage, bounds, filename);
-        else throw new Error(`Unknown export format: ${format}`);
+        if (format === 'png') await exportPng(stage, plan, filename);
+        else if (format === 'pdf') await exportPdf(stage, plan, filename);
+        else await exportSvg(stage, plan, filename);
 
         closeExportModal();
     } catch (err) {
@@ -179,6 +180,33 @@ function exportPixelRatio(width, height) {
     );
 }
 
+// WebKit (Safari, and every iOS browser) mis-renders box-shadow inside an
+// SVG <foreignObject> when the image is drawn scaled onto a canvas: offset
+// and blur are not scaled with the image, so shadows come out as hard,
+// shifted rectangles. A CSS `transform: scale()` triggers the same bug.
+// Blink and Gecko are unaffected.
+function isWebKitEngine() {
+    const ua = navigator.userAgent;
+    return /AppleWebKit\//.test(ua) && !/Chrome\/|Chromium\//.test(ua);
+}
+
+// How to reach the target raster density for this browser:
+// - default: render the stage at zoom 1 and let html-to-image upscale the
+//   canvas (`pixelRatio`);
+// - WebKit raster: scale the DOM itself with CSS `zoom` (which re-lays out
+//   shadows at the larger size) and draw it 1:1 onto the canvas.
+// `width`/`height` are the stage's CSS size as rendered.
+function planRender(bounds, raster) {
+    const ratio = raster ? exportPixelRatio(bounds.width, bounds.height) : 1;
+    const domScale = raster && ratio !== 1 && isWebKitEngine() ? ratio : 1;
+    return {
+        domScale,
+        pixelRatio: ratio / domScale,
+        width: Math.round(bounds.width * domScale),
+        height: Math.round(bounds.height * domScale),
+    };
+}
+
 // ---- Off-screen stage ----
 
 // Keep the stage laid out (html-to-image reads computed styles) but invisible:
@@ -204,16 +232,16 @@ function mountOffscreen(stage) {
     return host;
 }
 
-// A clone of #canvas at zoom 1 inside a fixed-size box. The live board is
-// never touched.
-function buildExportStage(bounds, includeBg) {
+// A clone of #canvas inside a fixed-size box, at zoom 1 (or `domScale`, see
+// planRender). The live board is never touched.
+function buildExportStage(bounds, includeBg, domScale = 1) {
     const stage = document.createElement('div');
     Object.assign(stage.style, {
         position: 'absolute',
         left: '0',
         top: '0',
-        width: `${bounds.width}px`,
-        height: `${bounds.height}px`,
+        width: `${Math.round(bounds.width * domScale)}px`,
+        height: `${Math.round(bounds.height * domScale)}px`,
         overflow: 'hidden',
         backgroundColor: 'transparent',
     });
@@ -235,8 +263,10 @@ function buildExportStage(bounds, includeBg) {
         width: `${liveCanvas.offsetWidth}px`,
         height: `${liveCanvas.offsetHeight}px`,
         transformOrigin: '0 0',
+        // Under `zoom`, the translate lengths are scaled along with everything else.
         transform: `translate(${-bounds.x}px, ${-bounds.y}px)`,
     });
+    if (domScale !== 1) canvas.style.zoom = String(domScale);
 
     // #connections-svg styles are id-based; inline them on the clone.
     const svg = canvas.querySelector('svg');
@@ -284,27 +314,34 @@ async function prepareExportStage(stage) {
     ));
 }
 
-function renderOptions(bounds, extra) {
+function renderOptions(plan, extra) {
     return {
-        width: bounds.width,
-        height: bounds.height,
+        width: plan.width,
+        height: plan.height,
+        // Always explicit: html-to-image otherwise defaults to devicePixelRatio.
+        pixelRatio: plan.pixelRatio,
         ...extra,
     };
 }
 
 // ---- Formats ----
 
-async function exportPng(stage, bounds, filename) {
-    const pixelRatio = exportPixelRatio(bounds.width, bounds.height);
-    const blob = await htmlToImage.toBlob(stage, renderOptions(bounds, { pixelRatio }));
+// WebKit draws the SVG image before the data-URI images inside its
+// <foreignObject> are decoded, so the first raster misses the cork and card
+// photos. A throw-away warm-up render primes the decode cache.
+async function rasterize(render, stage, options) {
+    if (isWebKitEngine()) await render(stage, options);
+    return render(stage, options);
+}
+
+async function exportPng(stage, plan, filename) {
+    const blob = await rasterize(htmlToImage.toBlob, stage, renderOptions(plan));
     if (!blob) throw new Error('PNG rendering returned no data');
     downloadBlob(blob, filename);
 }
 
-async function exportPdf(stage, bounds, filename) {
-    const pixelRatio = exportPixelRatio(bounds.width, bounds.height);
-    const dataUrl = await htmlToImage.toJpeg(stage, renderOptions(bounds, {
-        pixelRatio,
+async function exportPdf(stage, plan, filename) {
+    const dataUrl = await rasterize(htmlToImage.toJpeg, stage, renderOptions(plan, {
         quality: EXPORT_JPEG_QUALITY,
         // JPEG has no alpha: without the cork the page is plain white.
         backgroundColor: '#ffffff',
@@ -315,15 +352,15 @@ async function exportPdf(stage, bounds, filename) {
     const pageH = pdf.internal.pageSize.getHeight();
     const maxW = pageW - 2 * EXPORT_PDF_MARGIN_MM;
     const maxH = pageH - 2 * EXPORT_PDF_MARGIN_MM;
-    const scale = Math.min(maxW / bounds.width, maxH / bounds.height);
-    const imgW = bounds.width * scale;
-    const imgH = bounds.height * scale;
+    const scale = Math.min(maxW / plan.width, maxH / plan.height);
+    const imgW = plan.width * scale;
+    const imgH = plan.height * scale;
     pdf.addImage(dataUrl, 'JPEG', (pageW - imgW) / 2, (pageH - imgH) / 2, imgW, imgH, undefined, 'FAST');
     pdf.save(filename);
 }
 
-async function exportSvg(stage, bounds, filename) {
-    const dataUrl = await htmlToImage.toSvg(stage, renderOptions(bounds));
+async function exportSvg(stage, plan, filename) {
+    const dataUrl = await htmlToImage.toSvg(stage, renderOptions(plan));
     const svgText = decodeURIComponent(dataUrl.slice(dataUrl.indexOf(',') + 1));
     downloadBlob(new Blob([svgText], { type: 'image/svg+xml' }), filename);
 }
