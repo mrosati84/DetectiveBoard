@@ -1,0 +1,30 @@
+<!-- Export modal -->
+<div id="export-modal-overlay">
+    <div id="export-modal" role="dialog" aria-labelledby="export-modal-title">
+        <div id="export-modal-header">
+            <h2 id="export-modal-title">&#128190; Export Board</h2>
+            <button id="export-modal-close" onclick="closeExportModal()" title="Close">&times;</button>
+        </div>
+        <form id="export-form">
+            <div class="form-group">
+                <label>Format</label>
+                <div class="export-format-group">
+                    <label><input type="radio" name="export_format" value="png" checked> PNG</label>
+                    <label><input type="radio" name="export_format" value="pdf"> PDF</label>
+                    <label><input type="radio" name="export_format" value="svg"> SVG</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="export-include-background" checked>
+                    Include cork background
+                </label>
+            </div>
+            <div id="export-form-error" class="form-error" aria-live="polite"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeExportModal()">Cancel</button>
+                <button type="submit" id="export-download-btn" class="btn-primary">Download</button>
+            </div>
+        </form>
+    </div>
+</div>

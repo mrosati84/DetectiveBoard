@@ -178,6 +178,7 @@ function handleUnauthorized() {
 
 // ---- Board state ----
 let currentBoardId = null;
+let currentBoardName = '';
 let currentBoardShareToken = null; // null = not shared
 let cards = [];        // [{id, title, description, image_path, pos_x, pos_y, el}]
 let notes = [];        // [{id, content, pos_x, pos_y, el}]
@@ -516,6 +517,7 @@ function startRenameBoard(item, b) {
                 body: JSON.stringify({ name: newName }),
             });
             if (res.status === 401) { handleUnauthorized(); return; }
+            if (res.ok && b.id === currentBoardId) currentBoardName = newName;
         }
         loadBoards();
     };
@@ -561,6 +563,7 @@ async function loadBoard(boardId) {
 
     currentBoardId = boardId;
     clearBoard();
+    currentBoardName = data.board.name || '';
     currentBoardShareToken = data.board.share_token || null;
 
     connections = data.connections;
@@ -585,6 +588,7 @@ function clearBoard() {
     notes = [];
     connections = [];
     currentBoardShareToken = null;
+    currentBoardName = '';
     updateToolbar();
     document.getElementById('share-btn').style.display = 'none';
     updateShareBanner();
@@ -597,6 +601,7 @@ function addCard(cardData) {
     card.el = createCardElement(card);
     document.getElementById('canvas').appendChild(card.el);
     cards.push(card);
+    refreshExportButton();
     return card;
 }
 
@@ -900,6 +905,13 @@ function updateToolbar() {
         connectBtn.style.display = 'none';
         disconnectBtn.style.display = 'none';
     }
+
+    refreshExportButton();
+}
+
+// Export lives in export.js (owner view only); guard so board.js works without it.
+function refreshExportButton() {
+    if (typeof updateExportButton === 'function') updateExportButton();
 }
 
 function editSelectedCard() {
@@ -1072,6 +1084,7 @@ function addNote(noteData) {
     note.el = createNoteElement(note);
     document.getElementById('canvas').appendChild(note.el);
     notes.push(note);
+    refreshExportButton();
     return note;
 }
 

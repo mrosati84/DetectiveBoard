@@ -62,6 +62,7 @@
     <button id="connect-btn" class="toolbar-btn" onclick="connectCards()">&#128279; Connect</button>
     <button id="disconnect-btn" class="toolbar-btn" onclick="disconnectCards()">&#9986; Disconnect</button>
     <button id="share-btn" class="toolbar-btn" onclick="onShareToggle()" style="display:none;">&#128279; Share</button>
+    <button id="export-btn" class="toolbar-btn" onclick="openExportModal()" title="Export board" disabled>&#128190; Export</button>
     <button id="help-btn" class="toolbar-btn" onclick="openHelpModal()" title="Help">? Help</button>
 </div>
 
@@ -133,5 +134,13 @@
 {% include 'partials/modals/_register_modal.html' %}
 {% include 'partials/modals/_share_modal.html' %}
 {% include 'partials/modals/_help_modal.html' %}
+{% include 'partials/modals/_export_modal.html' %}
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/vendor/html-to-image-1.11.11.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/jspdf-2.5.2.umd.min.js') }}"></script>
+{{ super() }}
+<script src="{{ url_for('static', filename='js/export.js') }}"></script>
 {% endblock %}
