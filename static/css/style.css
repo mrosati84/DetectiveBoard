@@ -1193,6 +1193,21 @@ body {
     background: #236e33;
 }
 
+#export-btn {
+    background: #3d4a5c;
+    color: #e2e8f0;
+}
+
+#export-btn:hover:not(:disabled) {
+    background: #4a5a70;
+}
+
+.toolbar-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
 #share-btn.share-btn-active {
     background: #4a4a4a;
     color: #ddd;
@@ -1544,4 +1559,85 @@ body {
         padding: 7px 12px;
         font-size: 12px;
     }
+}
+
+/* ---- Export modal ---- */
+
+#export-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+}
+
+#export-modal-overlay.open {
+    display: flex;
+}
+
+#export-modal {
+    background: #fffef5;
+    border-radius: 8px;
+    padding: 26px 28px 24px;
+    width: 380px;
+    max-width: 94vw;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+#export-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+#export-modal-header h2 {
+    font-size: 17px;
+    color: #2a1500;
+    margin: 0;
+}
+
+#export-modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #888;
+    line-height: 1;
+    padding: 0 4px;
+    border-radius: 3px;
+    transition: color 0.12s;
+}
+
+#export-modal-close:hover {
+    color: #333;
+}
+
+.export-format-group {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    margin-top: 2px;
+}
+
+.export-format-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #3a2000;
+    cursor: pointer;
+}
+
+#export-download-btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
 }
