@@ -1,0 +1,15 @@
+{#- BreadcrumbList JSON-LD node (no surrounding script tag). -#}
+{
+      "@type": "BreadcrumbList",
+      "@id": "{{ site_url }}{{ page.path }}#breadcrumb",
+      "itemListElement": [
+        {%- for crumb in breadcrumbs %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index }},
+          "name": {{ crumb.name | tojson }},
+          "item": "{{ site_url }}{{ crumb.path }}"
+        }{% if not loop.last %},{% endif %}
+        {%- endfor %}
+      ]
+    }

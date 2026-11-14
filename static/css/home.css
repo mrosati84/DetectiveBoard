@@ -207,7 +207,7 @@ body.home-page {
 }
 
 #hero-title {
-    font-size: clamp(48px, 7vw, 84px);
+    font-size: clamp(38px, 4.6vw, 60px);
     line-height: 1.02;
     letter-spacing: -0.01em;
     margin-bottom: 24px;
@@ -231,7 +231,7 @@ body.home-page {
 
 /* ---- Demo board (hero illustration) ---- */
 
-#demo-board {
+.demo-board {
     position: relative;
     aspect-ratio: 5 / 4;
     border: 12px solid var(--wood);
@@ -247,7 +247,7 @@ body.home-page {
     transform: rotate(1deg);
 }
 
-#demo-yarn {
+.demo-yarn {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -301,6 +301,25 @@ body.home-page {
     background-position: center, 72% 50%, 80% 60%, 90% 58%;
 }
 
+.demo-photo-map {
+    background-color: #dfd3b4;
+    background-image:
+        radial-gradient(circle at 64% 42%, var(--red) 0 6%, transparent 6.5%),
+        linear-gradient(115deg, transparent 46%, #9c8a63 46% 50%, transparent 50%),
+        linear-gradient(rgba(120, 100, 60, 0.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120, 100, 60, 0.35) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 18% 22%, 18% 22%;
+}
+
+.demo-photo-doc {
+    background-color: #ece3cc;
+    background-image:
+        linear-gradient(#8f7f63, #8f7f63),
+        repeating-linear-gradient(transparent 0 11%, rgba(110, 90, 60, 0.55) 11% 14%);
+    background-size: 40% 8%, 76% 62%;
+    background-position: 14% 16%, 50% 78%;
+}
+
 .demo-title {
     font-weight: bold;
     font-size: clamp(11px, 1.15vw, 14px);
@@ -329,14 +348,14 @@ body.home-page {
 /* Entry animation — only applied when JS adds .will-animate
    (and the user doesn't prefer reduced motion). */
 
-#demo-board.will-animate .demo-card,
-#demo-board.will-animate .demo-note {
+.demo-board.will-animate .demo-card,
+.demo-board.will-animate .demo-note {
     opacity: 0;
     transform: translateY(-26px) rotate(var(--r)) scale(1.06);
 }
 
-#demo-board.will-animate.is-playing .demo-card,
-#demo-board.will-animate.is-playing .demo-note {
+.demo-board.will-animate.is-playing .demo-card,
+.demo-board.will-animate.is-playing .demo-note {
     animation: pin-drop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) var(--d) forwards;
 }
 
@@ -347,7 +366,7 @@ body.home-page {
     }
 }
 
-#demo-yarn .yarn-draw {
+.demo-yarn .yarn-draw {
     animation: yarn-draw 0.7s ease-in-out both;
 }
 
@@ -595,6 +614,28 @@ body.home-page {
     color: var(--ink-soft);
 }
 
+/* ---- Contextual links ---- */
+
+.section-more {
+    margin-top: 40px;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    text-align: center;
+}
+
+.section-more a,
+.faq-item p a {
+    color: var(--red);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.section-more a:hover,
+.faq-item p a:hover {
+    color: var(--red-hover);
+}
+
 /* ---- Footer ---- */
 
 #home-footer {
@@ -604,7 +645,25 @@ body.home-page {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     font-size: 13px;
+}
+
+.footer-nav {
+    display: flex;
+    gap: 22px;
+}
+
+.footer-nav a {
+    color: var(--cream);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+}
+
+.footer-nav a:hover,
+.footer-nav a:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 /* ---- Responsive ---- */
@@ -621,7 +680,7 @@ body.home-page {
             url('/assets/cork_background.jpg');
     }
 
-    #demo-board {
+    .demo-board {
         max-width: 560px;
         width: 100%;
         margin: 0 auto;
@@ -673,7 +732,7 @@ body.home-page {
         width: 100%;
     }
 
-    #demo-board {
+    .demo-board {
         border-width: 8px;
     }
 

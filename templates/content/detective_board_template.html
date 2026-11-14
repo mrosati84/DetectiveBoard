@@ -1,0 +1,180 @@
+{% extends 'content/_layout.html' %}
+
+{% macro card(node, x, y, r, title, desc, photo=none, pin_left=false) -%}
+<div class="demo-card" data-node="{{ node }}" style="--x:{{ x }}; --y:{{ y }}; --r:{{ r }};">
+    <span class="demo-pin{% if pin_left %} pin-left{% endif %}"></span>
+    {%- if photo %}
+    <div class="demo-photo demo-photo-{{ photo }}"></div>
+    {%- endif %}
+    <p class="demo-title">{{ title }}</p>
+    <p class="demo-desc">{{ desc }}</p>
+</div>
+{%- endmacro %}
+
+{% macro note(node, x, y, r) -%}
+<div class="demo-note" data-node="{{ node }}" style="--x:{{ x }}; --y:{{ y }}; --r:{{ r }};">
+    <span class="demo-pin"></span>
+    {{ caller() }}
+</div>
+{%- endmacro %}
+
+{% macro cta(event) -%}
+<button class="hero-btn hero-btn-primary" onclick="openRegisterModal()"
+    data-goatcounter-click="{{ event }}" data-goatcounter-title="CTA: template {{ event }}">Start this board &mdash; it&rsquo;s free</button>
+{%- endmacro %}
+
+{% block title %}Detective Board Templates – 4 Free Examples for Your Case | DetectiveBoard{% endblock %}
+
+{% block meta_description %}Free detective board templates and examples: a murder mystery, a true crime case, a novel plot and a tabletop RPG campaign. See what to pin, then build yours online.{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      "@id": "{{ site_url }}{{ page.path }}#webpage",
+      "url": "{{ site_url }}{{ page.path }}",
+      "name": {{ self.title() | tojson }},
+      "description": {{ self.meta_description() | tojson }},
+      "inLanguage": "en",
+      "isPartOf": { "@id": "{{ site_url }}/#website" },
+      "breadcrumb": { "@id": "{{ site_url }}{{ page.path }}#breadcrumb" }
+    },
+    {% include 'partials/_breadcrumb_ld.html' %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block eyebrow %}Case files{% endblock %}
+{% block heading %}Detective board templates{% endblock %}
+{% block lead %}
+Four example detective boards to copy, adapt or simply steal ideas from. Each one shows what to pin,
+how to connect it with red string and where the real insight usually hides.
+{% endblock %}
+
+{% block body %}
+<section class="paper-section">
+    <div class="home-container">
+
+        <article class="template-case" id="murder-mystery">
+            <div class="demo-board" data-links="suspect>clue clue>place note>place" aria-hidden="true">
+                <svg class="demo-yarn" xmlns="http://www.w3.org/2000/svg"></svg>
+                {{ card('suspect', '5%', '7%', '-3deg', 'Lady Hartwell', 'Inherits everything', 'suspect') }}
+                {{ card('clue', '62%', '5%', '2.5deg', 'Empty vial', 'In the greenhouse', 'doc') }}
+                {{ card('place', '50%', '60%', '-1.5deg', 'Conservatory, 11 pm', 'Door locked from inside', pin_left=true) }}
+                {% call note('note', '10%', '68%', '-4deg') %}the gardener<br>lied?{% endcall %}
+            </div>
+            <div class="template-text">
+                <h2>Murder mystery detective board</h2>
+                <p>The classic. Whether you&rsquo;re hosting a murder mystery party, reading a whodunit or
+                    writing one, this layout puts every suspect next to the evidence that implicates them.</p>
+                <h3>What to pin</h3>
+                <ul>
+                    <li>One card per suspect, with a photo, motive and alibi.</li>
+                    <li>Physical evidence: the weapon, the letter, the missing key.</li>
+                    <li>Places and times, so alibis can be checked against each other.</li>
+                </ul>
+                <p class="template-tip">Tip: tie every suspect to the scene with red string. The one you can&rsquo;t connect is either innocent or very clever.</p>
+                {{ cta('template-murder-mystery') }}
+            </div>
+        </article>
+
+        <article class="template-case" id="true-crime">
+            <div class="demo-board" data-links="sighting>timeline suspect>sighting note>timeline" aria-hidden="true">
+                <svg class="demo-yarn" xmlns="http://www.w3.org/2000/svg"></svg>
+                {{ card('sighting', '5%', '7%', '-2deg', 'Last sighting', 'Gas station, 8:15', 'map') }}
+                {{ card('suspect', '62%', '5%', '3deg', 'The ex', 'Phone off all night', 'suspect') }}
+                {{ card('timeline', '50%', '60%', '-1deg', 'Timeline', '8:15 seen · 8:40 car found', pin_left=true) }}
+                {% call note('note', '10%', '68%', '-3deg') %}check toll<br>cameras{% endcall %}
+            </div>
+            <div class="template-text">
+                <h2>True crime case board</h2>
+                <p>Following a podcast, a documentary or an unsolved case? An evidence board keeps the
+                    people, places and timeline in one view, so new details slot into place instead of
+                    getting lost in your notes.</p>
+                <h3>What to pin</h3>
+                <ul>
+                    <li>The victim and every person of interest.</li>
+                    <li>A timeline card for the critical hours.</li>
+                    <li>Locations, sightings and the sources you got them from.</li>
+                </ul>
+                <p class="template-tip">Tip: write the source on each card. When two sources disagree, that&rsquo;s where to dig.</p>
+                {{ cta('template-true-crime') }}
+            </div>
+        </article>
+
+        <article class="template-case" id="novel-plot">
+            <div class="demo-board" data-links="hero>letter hero>herring note>letter" aria-hidden="true">
+                <svg class="demo-yarn" xmlns="http://www.w3.org/2000/svg"></svg>
+                {{ card('hero', '5%', '7%', '-2.5deg', 'Mara', 'Hiding a debt', 'suspect') }}
+                {{ card('letter', '62%', '5%', '2deg', 'The letter', 'The ch. 14 twist', 'doc') }}
+                {{ card('herring', '50%', '60%', '-1.5deg', 'Red herring', 'The brother’s sudden trip', pin_left=true) }}
+                {% call note('note', '10%', '68%', '-4deg') %}plant it<br>earlier!{% endcall %}
+            </div>
+            <div class="template-text">
+                <h2>Novel plot board</h2>
+                <p>Writers have used cork boards for plotting long before detectives became famous for
+                    them. Lay out characters, secrets and reveals, then follow the red string to check that
+                    every twist is earned.</p>
+                <h3>What to pin</h3>
+                <ul>
+                    <li>Main characters, with what they want and what they hide.</li>
+                    <li>Key clues and the chapter where each one appears.</li>
+                    <li>Red herrings, with a note on when they get resolved.</li>
+                </ul>
+                <p class="template-tip">Tip: a clue with no string leading to it is a twist your reader won&rsquo;t believe.</p>
+                {{ cta('template-novel-plot') }}
+            </div>
+        </article>
+
+        <article class="template-case" id="rpg-campaign">
+            <div class="demo-board" data-links="villain>map map>session note>villain" aria-hidden="true">
+                <svg class="demo-yarn" xmlns="http://www.w3.org/2000/svg"></svg>
+                {{ card('villain', '5%', '7%', '-3deg', 'Duke Varn', 'Funds the cult', 'suspect') }}
+                {{ card('map', '62%', '5%', '2.5deg', 'Old city map', 'Sewers marked', 'map') }}
+                {{ card('session', '50%', '60%', '-2deg', 'Session 7: the heist', 'The party owes the guild', pin_left=true) }}
+                {% call note('note', '10%', '68%', '-3.5deg') %}who sold<br>them out?{% endcall %}
+            </div>
+            <div class="template-text">
+                <h2>Tabletop RPG campaign board</h2>
+                <p>Game masters juggle factions, NPCs and secrets across months of sessions. A conspiracy
+                    board shows who knows what &mdash; and your players will love seeing it if you share a
+                    read-only link.</p>
+                <h3>What to pin</h3>
+                <ul>
+                    <li>Factions and major NPCs, with their goals.</li>
+                    <li>Maps and locations the party has discovered.</li>
+                    <li>One card per session with its open threads.</li>
+                </ul>
+                <p class="template-tip">Tip: keep a private board for secrets and share a second one with your players.</p>
+                {{ cta('template-rpg-campaign') }}
+            </div>
+        </article>
+
+    </div>
+</section>
+
+<section class="paper-section paper-section-alt">
+    <div class="home-container home-container-narrow prose">
+        <h2>How to use these templates</h2>
+        <p>These detective board examples are starting points, not rules. Open a free board, add a card for
+            each item on the &ldquo;what to pin&rdquo; list, then connect related cards with red string. Move
+            things around as your theory changes &mdash; that&rsquo;s the whole point of a pin board.</p>
+        <p>New to this? Our guide on
+            <a href="{{ url_for('content.how_to_make_a_detective_board') }}">how to make a detective board</a>
+            walks through the physical cork-and-pins version and the online one, step by step. Or head back to
+            the <a href="{{ url_for('pages.home') }}">online detective board</a> and start from a blank case.</p>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block cta %}
+{% set cta_title = 'Pick a case and start pinning' %}
+{% set cta_subtitle = 'Build any of these detective boards online in a couple of minutes.' %}
+{% set cta_event = 'cta-template-final' %}
+{% include 'partials/_site_cta.html' %}
+{% endblock %}

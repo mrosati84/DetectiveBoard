@@ -1,0 +1,55 @@
+{% extends 'content/_layout.html' %}
+
+{% block title %}Detective Board Guides – How to Build and Use One | DetectiveBoard{% endblock %}
+
+{% block meta_description %}Guides to making and using a detective board: from cork, push pins and red string to organizing an investigation board online.{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      "@id": "{{ site_url }}{{ page.path }}#webpage",
+      "url": "{{ site_url }}{{ page.path }}",
+      "name": {{ self.title() | tojson }},
+      "description": {{ self.meta_description() | tojson }},
+      "inLanguage": "en",
+      "isPartOf": { "@id": "{{ site_url }}/#website" },
+      "breadcrumb": { "@id": "{{ site_url }}{{ page.path }}#breadcrumb" }
+    },
+    {% include 'partials/_breadcrumb_ld.html' %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block eyebrow %}Field manual{% endblock %}
+{% block heading %}Detective board guides{% endblock %}
+{% block lead %}
+Practical guides to building an investigation board, pinning the right evidence and getting the most
+out of red string &mdash; on cork or online.
+{% endblock %}
+
+{% block body %}
+<section class="paper-section">
+    <div class="home-container">
+        <ul class="guide-list">
+            {%- for guide in guides %}
+            <li>
+                <a class="guide-card" href="{{ guide.path }}">
+                    <h2>{{ guide.name }}</h2>
+                    <p>{{ guide.summary }}</p>
+                    <p class="guide-more">Read the guide &rarr;</p>
+                </a>
+            </li>
+            {%- endfor %}
+        </ul>
+        <p class="section-more">
+            Looking for ready-made layouts? Browse our
+            <a href="{{ url_for('content.detective_board_template') }}">detective board templates</a>.
+        </p>
+    </div>
+</section>
+{% endblock %}

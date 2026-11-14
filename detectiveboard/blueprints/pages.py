@@ -15,6 +15,7 @@ from flask import (
 from werkzeug.wrappers.response import Response as WerkzeugResponse
 
 from detectiveboard.config import BASE_DIR
+from detectiveboard.content import HOME_FAQ, indexable_pages
 from detectiveboard.database import db_session
 from detectiveboard.services import share as share_service
 
@@ -78,7 +79,7 @@ def robots_txt() -> Response:
 
 @bp.route("/sitemap.xml")
 def sitemap_xml() -> Response:
-    body = render_template("seo/sitemap.xml")
+    body = render_template("seo/sitemap.xml", pages=indexable_pages())
     return Response(body, mimetype="application/xml")
 
 
@@ -90,7 +91,7 @@ def web_manifest() -> Response:
 
 @bp.route("/")
 def home() -> str:
-    return render_template("home.html")
+    return render_template("home.html", faq=HOME_FAQ)
 
 
 @bp.route("/board")

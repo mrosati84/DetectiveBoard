@@ -1,0 +1,11 @@
+{#- Visible breadcrumb trail; mirrors the BreadcrumbList JSON-LD. -#}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+        {%- for crumb in breadcrumbs %}
+        <li>
+            {%- if loop.last %}<span aria-current="page">{{ crumb.name }}</span>
+            {%- else %}<a href="{{ crumb.path }}">{{ crumb.name }}</a>{% endif -%}
+        </li>
+        {%- endfor %}
+    </ol>
+</nav>

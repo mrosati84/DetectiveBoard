@@ -7,9 +7,10 @@ function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
 function clearToken() { localStorage.removeItem(TOKEN_KEY); }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Already authenticated → go straight to the board
+    // Already authenticated on the homepage → go straight to the board.
+    // Guides and template pages stay readable for logged-in users.
     const token = getToken();
-    if (token) {
+    if (token && window.location.pathname === '/') {
         try {
             const res = await fetch('/api/auth/me', {
                 headers: { 'Authorization': 'Bearer ' + token }
@@ -22,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearToken();
     }
 
-    initDemoBoard();
+    initDemoBoards();
 
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('register-form').addEventListener('submit', handleRegister);
@@ -118,35 +119,41 @@ function trackEvent(path, title) {
     } catch (_) {}
 }
 
-/* ---- Hero demo board ---- */
+/* ---- Demo boards (hero + template examples) ---- */
+
+// Each .demo-board lists its yarn as data-links="from>to from>to", where the
+// names match the data-node attributes of its cards. Boards with data-animate
+// play the pin-drop entry animation (the homepage hero).
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const DEMO_LINKS = [
-    ['suspect', 'clue'],
-    ['suspect', 'place'],
-    ['note', 'place'],
-];
 const DEMO_YARN_START_MS = 1000;   // after the last card has landed
 const DEMO_YARN_STAGGER_MS = 260;
 
-function initDemoBoard() {
-    const board = document.getElementById('demo-board');
-    if (!board) return;
+function initDemoBoards() {
+    const boards = document.querySelectorAll('.demo-board');
+    if (!boards.length) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!reduceMotion) board.classList.add('will-animate');
 
-    drawDemoYarn(board, !reduceMotion);
-
-    if (!reduceMotion) {
-        requestAnimationFrame(() => board.classList.add('is-playing'));
-    }
+    boards.forEach(board => {
+        const animate = !reduceMotion && board.hasAttribute('data-animate');
+        if (animate) board.classList.add('will-animate');
+        drawDemoYarn(board, animate);
+        if (animate) requestAnimationFrame(() => board.classList.add('is-playing'));
+    });
 
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => drawDemoYarn(board, false), 100);
+        resizeTimer = setTimeout(() => boards.forEach(b => drawDemoYarn(b, false)), 100);
     });
+}
+
+function demoLinks(board) {
+    return (board.dataset.links || '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(pair => pair.split('>'));
 }
 
 function demoPinPoint(el) {
@@ -168,10 +175,11 @@ function yarnPath(a, b) {
 }
 
 function drawDemoYarn(board, animate) {
-    const svg = document.getElementById('demo-yarn');
+    const svg = board.querySelector('.demo-yarn');
+    if (!svg) return;
     svg.replaceChildren();
 
-    DEMO_LINKS.forEach(([from, to], i) => {
+    demoLinks(board).forEach(([from, to], i) => {
         const a = board.querySelector(`[data-node="${from}"]`);
         const b = board.querySelector(`[data-node="${to}"]`);
         if (!a || !b) return;
